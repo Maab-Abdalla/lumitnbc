@@ -26,7 +26,7 @@ This app is ready to deploy to [Railway](https://railway.app) using the included
    `DATABASE_URL` is present (i.e. on Railway).
 
 5. **Deploy.** Railway builds the image and starts it with:
-   `gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app`
+   `gunicorn -c gunicorn.conf.py app:app` (the port is read from `$PORT` in `gunicorn.conf.py`)
 
 6. **Open the generated URL.** On first boot the app creates the tables and
    seeds the three demo accounts.

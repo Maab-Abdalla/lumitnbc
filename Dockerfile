@@ -19,5 +19,6 @@ RUN mkdir -p instance
 
 ENV PYTHONUNBUFFERED=1
 
-# Railway injects $PORT; default to 5000 locally. Shell form so $PORT expands.
-CMD gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 app:app
+# Railway injects $PORT; gunicorn.conf.py reads it in Python (no shell
+# expansion needed). Exec form is fine since the config handles the port.
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]
