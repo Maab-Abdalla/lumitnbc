@@ -1,0 +1,17 @@
+flask>=3.0
+flask-sqlalchemy>=3.1
+werkzeug>=3.0
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+xgboost>=2.0
+joblib>=1.3
+shap>=0.43
+
+# Production / deployment
+gunicorn>=21.0
+psycopg2-binary>=2.9
+
+# Optional: enables the LLM "Your Personal Summary" layer.
+# Set ANTHROPIC_API_KEY to activate; the app runs fine without it.
+# anthropic>=0.40
