@@ -171,7 +171,7 @@
           {% if result.method in ['xgboost_ml', 'hybrid_ml'] and patient_reasons %}
             <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-5);">The AI looked at patterns in your tumour's gene activity. These were the strongest signals pointing to the {{ result.subtype }} subtype:</p>
             {% for r in patient_reasons %}
-              <div style="display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);background:{% if r.supports %}rgba(215,93,166,0.06){% else %}rgba(74,142,194,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
+              <div style="display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);background:{% if r.supports %}rgba(196,110,156,0.06){% else %}rgba(94,147,190,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
                 <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">{{ loop.index }}</div>
                 <div>
                   <p style="font-weight:600;font-size:14px;margin-bottom:4px;">{{ r.label }}</p>
@@ -208,7 +208,7 @@
         <div class="card-body">
           <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">These research studies are testing treatments for the {{ result.subtype }} subtype. Ask your care team whether any could be right for you.</p>
           {% for trial in result.trials[:3] %}
-          <div style="border:{% if loop.first %}2px solid {{ scolor }}{% else %}1px solid rgba(215,93,166,0.15){% endif %};border-radius:var(--r-input);padding:var(--sp-5);{% if loop.first %}background:var(--lumi-blush-half);{% endif %}margin-bottom:var(--sp-3);">
+          <div style="border:{% if loop.first %}2px solid {{ scolor }}{% else %}1px solid rgba(196,110,156,0.15){% endif %};border-radius:var(--r-input);padding:var(--sp-5);{% if loop.first %}background:var(--lumi-blush-half);{% endif %}margin-bottom:var(--sp-3);">
             <p style="font-weight:600;font-size:15px;margin-bottom:var(--sp-3);">{{ trial.title }}</p>
             <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3);">
               <span class="badge badge-success">{{ trial.match }}% match</span>
@@ -277,7 +277,7 @@
 
     <!-- Subtype clinical description -->
     {% if info.description %}
-    <div style="background:var(--lumi-white);border:1px solid rgba(215,93,166,0.1);border-radius:var(--r-card);padding:var(--sp-6);margin-bottom:var(--sp-6);">
+    <div style="background:var(--lumi-white);border:1px solid rgba(196,110,156,0.1);border-radius:var(--r-card);padding:var(--sp-6);margin-bottom:var(--sp-6);">
       <h3 style="margin-bottom:var(--sp-2);">About {{ info.get('full_name', result.subtype) }}</h3>
       <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin-bottom:var(--sp-4);">{{ info.description }}</p>
       <div style="display:flex;gap:var(--sp-8);flex-wrap:wrap;">
@@ -289,7 +289,7 @@
 
     <!-- Probabilities -->
     {% if result.probabilities %}
-    <div style="background:var(--lumi-white);border:1px solid rgba(215,93,166,0.1);border-radius:var(--r-card);padding:var(--sp-6);margin-bottom:var(--sp-6);">
+    <div style="background:var(--lumi-white);border:1px solid rgba(196,110,156,0.1);border-radius:var(--r-card);padding:var(--sp-6);margin-bottom:var(--sp-6);">
       <h3 style="margin-bottom:var(--sp-4);">Posterior Probabilities</h3>
       <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
         {% for sub, prob in result.probabilities.items() %}
@@ -350,7 +350,7 @@
         </div>
         <div class="card-body">
           {% for trial in result.trials[:3] %}
-          <div style="border:{% if loop.first %}2px solid {{ scolor }}{% else %}1px solid rgba(215,93,166,0.15){% endif %};border-radius:var(--r-input);padding:var(--sp-5);{% if loop.first %}background:var(--lumi-blush-half);{% endif %}margin-bottom:var(--sp-3);">
+          <div style="border:{% if loop.first %}2px solid {{ scolor }}{% else %}1px solid rgba(196,110,156,0.15){% endif %};border-radius:var(--r-input);padding:var(--sp-5);{% if loop.first %}background:var(--lumi-blush-half);{% endif %}margin-bottom:var(--sp-3);">
             <p style="font-size:13px;font-weight:600;color:{{ scolor }};margin-bottom:var(--sp-1);">{% if trial.url %}<a href="{{ trial.url }}" target="_blank" rel="noopener" style="color:{{ scolor }};">{{ trial.nct }}</a>{% else %}{{ trial.nct }}{% endif %}</p>
             <p style="font-weight:600;font-size:15px;margin-bottom:var(--sp-3);">{{ trial.title }}</p>
             <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3);">
@@ -474,7 +474,7 @@
             {% endif %}
 
             {% if ti.brca_note %}
-            <div style="padding:var(--sp-3);background:rgba(215,93,166,0.06);border-radius:var(--r-input);margin-bottom:var(--sp-4);font-size:13px;border-left:3px solid var(--lumi-pink);">
+            <div style="padding:var(--sp-3);background:rgba(196,110,156,0.06);border-radius:var(--r-input);margin-bottom:var(--sp-4);font-size:13px;border-left:3px solid var(--lumi-pink);">
               {{ ti.brca_note }}
             </div>
             {% endif %}
@@ -562,7 +562,7 @@
   "subtype": {{ result.subtype|tojson }},
   "confidence": {{ result.confidence|tojson }},
   "subtypeColors": {
-    "BL1": "#D75DA6", "BL2": "#ECA3BF", "LAR": "#4A8EC2", "M": "#28A745"
+    "BL1": "#C46E9C", "BL2": "#E3B5CC", "LAR": "#5E93BE", "M": "#2C9C84"
   },
   "shap": {{ patient_shap_chart|tojson }},
   "analysisId": {{ analysis_id|tojson }},
@@ -583,8 +583,10 @@
     var textCol = isDark ? '#A9B6C4' : '#5A6B7B';
     var labels = Object.keys(data.probabilities);
     var values = labels.map(function (k) { return data.probabilities[k]; });
+    // Each subtype shows in its own colour, so the donut is naturally
+    // multi-colour even when one subtype dominates.
     var colors = labels.map(function (k) {
-      return k === data.subtype ? (data.subtypeColors[k] || '#D75DA6') : otherColor;
+      return data.subtypeColors[k] || otherColor;
     });
     new Chart(donut, {
       type: 'doughnut',
@@ -611,7 +613,7 @@
         labels: data.shap.map(function (s) { return s.label; }),
         datasets: [{
           data: data.shap.map(function (s) { return s.value; }),
-          backgroundColor: data.shap.map(function (s) { return s.supports ? '#D75DA6' : '#4A8EC2'; }),
+          backgroundColor: data.shap.map(function (s) { return s.supports ? '#C46E9C' : '#5E93BE'; }),
           borderRadius: 4
         }]
       },

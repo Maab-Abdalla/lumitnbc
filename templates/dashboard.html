@@ -65,7 +65,7 @@
         <div class="card-body">
           {% if analyses and analyses[0].get('trials') %}
             {% for trial in analyses[0].get('trials',[])[:3] %}
-            <div style="padding:var(--sp-4);border:{% if loop.first %}2px solid var(--lumi-pink){% else %}1px solid rgba(215,93,166,0.15){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);">
+            <div style="padding:var(--sp-4);border:{% if loop.first %}2px solid var(--lumi-pink){% else %}1px solid rgba(196,110,156,0.15){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);">
               <p style="font-size:13px;font-weight:600;color:var(--lumi-pink);margin-bottom:var(--sp-1);">{{ trial.nct }}</p>
               <p style="font-weight:600;font-size:15px;margin-bottom:var(--sp-3);">{{ trial.title }}</p>
               <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;">
