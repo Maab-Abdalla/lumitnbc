@@ -238,31 +238,44 @@ def _register_routes(app):
                                analyses=[a.to_dict() for a in analyses])
 
     @app.route("/classification")
-    @login_required
     def classification():
+        # Open to guests too; they can run a one-off analysis without an account.
         return render_template("classification.html", gene_list=get_gene_list())
 
     @app.route("/results")
     @app.route("/results/<analysis_id>")
-    @login_required
     def results(analysis_id=None):
         user = current_user()
         result = None
 
-        if analysis_id:
-            a = Analysis.query.filter_by(analysis_id=analysis_id).first()
-            # Providers may only view analyses they ran themselves; admins see all.
-            if a and (a.user_id == user.id or user.role == "admin"):
-                result = a.to_dict()
+        if user:
+            if analysis_id:
+                a = Analysis.query.filter_by(analysis_id=analysis_id).first()
+                # Providers may only view analyses they ran themselves; admins see all.
+                if a and (a.user_id == user.id or user.role == "admin"):
+                    result = a.to_dict()
+            else:
+                # Most recent for this user
+                a = (Analysis.query
+                     .filter_by(user_id=user.id)
+                     .order_by(Analysis.created_at.desc())
+                     .first())
+                if a:
+                    result = a.to_dict()
+                    analysis_id = a.analysis_id
+            user_dict = user.to_dict()
         else:
-            # Most recent for this user
-            a = (Analysis.query
-                 .filter_by(user_id=user.id)
-                 .order_by(Analysis.created_at.desc())
-                 .first())
-            if a:
-                result = a.to_dict()
-                analysis_id = a.analysis_id
+            # Guest: result is held in the session only (not persisted).
+            result = session.get("guest_result")
+            if result:
+                analysis_id = result.get("analysis_id")
+                result = dict(result)
+                result["subtype_info"] = SUBTYPE_INFO.get(result.get("subtype", ""), {})
+            user_dict = {"name": "Guest", "role": "patient", "is_guest": True}
+
+        if not result:
+            # Nothing to show: guests go to upload, logged-in users likewise.
+            return redirect(url_for("classification"))
 
         return render_template("results.html", result=result,
                                analysis_id=analysis_id,
@@ -270,7 +283,7 @@ def _register_routes(app):
                                patient_shap_chart=build_patient_shap_chart(result),
                                patient_reasons=build_patient_reasons(result),
                                llm_summary_enabled=bool(os.environ.get("ANTHROPIC_API_KEY")),
-                               user=user.to_dict())
+                               user=user_dict)
 
     @app.route("/profile")
     @login_required
@@ -474,9 +487,9 @@ def _register_routes(app):
     # ── API: Classification ───────────────────────────────────────────────────
 
     @app.route("/api/classify/upload", methods=["POST"])
-    @login_required
     def api_classify_upload():
-        """Gene expression file upload → gene_only or hybrid classification."""
+        """Gene expression file upload → gene_only or hybrid classification.
+        Works for logged-in users (saved to DB) and guests (session only)."""
         user = current_user()
 
         if "file" not in request.files:
@@ -524,13 +537,17 @@ def _register_routes(app):
                 result["subtype"], result["confidence"], clinical_data
             )
 
-        _save_analysis(result, user)
+        if user:
+            _save_analysis(result, user)
+        else:
+            guest = {k: v for k, v in result.items() if k != "subtype_info"}
+            session["guest_result"] = guest
         return jsonify(result)
 
     @app.route("/api/classify/clinical", methods=["POST"])
-    @login_required
     def api_classify_clinical():
-        """Clinical-only form → rule-based classification."""
+        """Clinical-only form → rule-based classification.
+        Works for logged-in users (saved to DB) and guests (session only)."""
         from app_utils import clinical_rule_based_classification
         user = current_user()
         clinical_data = request.get_json()
@@ -551,7 +568,11 @@ def _register_routes(app):
             result["subtype"], result["confidence"], clinical_data
         )
 
-        _save_analysis(result, user)
+        if user:
+            _save_analysis(result, user)
+        else:
+            guest = {k: v for k, v in result.items() if k != "subtype_info"}
+            session["guest_result"] = guest
         return jsonify(result)
 
     # ── API: Data retrieval ───────────────────────────────────────────────────
@@ -679,8 +700,9 @@ def _enrich_result(result: dict, user: User, filename: str = None) -> dict:
     result["filename"] = filename
     result["trials"] = clinical_trials.get_trials(result.get("subtype", ""))
     result["subtype_info"] = SUBTYPE_INFO.get(result.get("subtype", ""), {})
-    result["user_name"] = user.name
-    result["user_role"] = user.role
+    # Guests (no account) are treated as the patient view; results are not saved.
+    result["user_name"] = user.name if user else "Guest"
+    result["user_role"] = user.role if user else "patient"
     return result
 
 

@@ -10,6 +10,7 @@
     {% if result %}
     {% set info = subtype_info.get(result.subtype, {}) %}
     {% set is_patient = (user.get('role') == 'patient') %}
+    {% set is_guest = user.get('is_guest', False) %}
     {% set scolor = info.get('color', 'var(--lumi-pink)') %}
 
     <!-- Header -->
@@ -234,6 +235,17 @@
 
     <!-- ===== Review My Result (moved to after trials) ===== -->
     <section id="sec-review" class="result-section">
+      {% if is_guest %}
+      <div class="card" style="border-left:4px solid var(--lumi-blue);">
+        <div class="card-body" style="padding:var(--sp-6);">
+          <h2 style="margin-bottom:var(--sp-2);font-size:18px;">Want to save this and get a professional review?</h2>
+          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">You are viewing this as a guest, so this result is not saved. Create a free account to keep your results and request a written review from a healthcare provider.</p>
+          <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Create an account</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
       <div id="reviewCard" class="card" style="border-left:4px solid var(--lumi-blue);">
         <div class="card-body" style="padding:var(--sp-6);">
           <!-- State A: not yet requested -->
@@ -262,6 +274,7 @@
           </div>
         </div>
       </div>
+      {% endif %}
     </section>
 
     <div class="info-panel" style="font-size:13px;margin-top:var(--sp-6);">
@@ -555,7 +568,7 @@
 {% endblock %}
 
 {% block scripts %}
-{% if result and user.get('role') == 'patient' %}
+{% if result and user.get('role') == 'patient' and not user.get('is_guest') %}
 <script id="chartData" type="application/json">
 {
   "probabilities": {{ result.probabilities|tojson if result.probabilities else '{}' }},
