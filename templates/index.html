@@ -16,7 +16,9 @@
       Understanding Your TNBC Journey with Clarity
     </h1>
 
-    
+    <p class="animate-in" style="--delay:0.15s; font-size:17px; line-height:1.55; color:var(--lumi-slate); max-width:600px; margin:0 auto var(--sp-6);">
+      LumiTNBC uses advanced AI to identify your Triple-Negative Breast Cancer molecular subtype and connect you with relevant clinical trials, with explanations you can understand.
+    </p>
 
     <div class="animate-in" style="--delay:0.25s; display:flex; gap:var(--sp-3); justify-content:center; flex-wrap:wrap; margin-bottom:var(--sp-3);">
       {% if session.get('user_id') %}
@@ -28,7 +30,7 @@
       {% endif %}
     </div>
     {% if not session.get('user_id') %}
-    
+   
     {% else %}
     <div style="margin-bottom:var(--sp-12);"></div>
     {% endif %}
