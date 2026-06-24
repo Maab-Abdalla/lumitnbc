@@ -713,15 +713,52 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
 .theme-toggle:hover { background: var(--lumi-blush); color: var(--lumi-pink); }
 
 /* ============================================================
-   RESULT SECTIONS (single scrolling page, full width)
+   RESULT TABS (Style C: icon-segment bar, panels switch, no scroll)
    ============================================================ */
 .result-content { width: 100%; }
 
-.result-section {
-  margin-bottom: var(--sp-8);
-  scroll-margin-top: 100px; /* clear the sticky page header on anchor jump */
+.result-tabbar {
+  display: flex;
+  gap: 4px;
+  background: var(--lumi-blush);
+  border-radius: var(--r-card);
+  padding: 5px;
+  margin-bottom: var(--sp-6);
 }
-.result-section:last-of-type { margin-bottom: var(--sp-4); }
+.result-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--lumi-pink);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 6px;
+  border-radius: var(--r-input);
+  transition: background 0.2s, color 0.2s;
+}
+.result-tab svg { width: 18px; height: 18px; }
+.result-tab:hover { background: rgba(196,110,156,0.12); }
+.result-tab.active { background: var(--lumi-pink); color: #fff; }
+:root[data-theme="dark"] .result-tab { color: var(--lumi-pink); }
+:root[data-theme="dark"] .result-tab.active { background: var(--lumi-pink); color: #1B2430; }
+
+/* Only the active panel is shown: no scrolling between sections. */
+.result-section { display: none; }
+.result-section.active { display: block; animation: fadeUp 0.35s cubic-bezier(0.22,1,0.36,1); }
+
+@media (max-width: 640px) {
+  .result-tab span { font-size: 11px; }
+  .result-tab { padding: 9px 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-section.active { animation: none; }
+}
 
 /* Result banner: themeable so dark mode reads correctly */
 .result-banner {

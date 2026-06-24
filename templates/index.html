@@ -30,7 +30,9 @@
       {% endif %}
     </div>
     {% if not session.get('user_id') %}
-   
+    <p class="animate-in" style="--delay:0.3s; font-size:13px; color:var(--lumi-muted); margin-bottom:var(--sp-12);">
+      Get Started to create an account, or jump straight in with Start Analysis (no sign-up needed).
+    </p>
     {% else %}
     <div style="margin-bottom:var(--sp-12);"></div>
     {% endif %}
