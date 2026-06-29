@@ -194,19 +194,26 @@
         <div class="card-header"><h2 class="card-title mb-0">Why the model decided this</h2></div>
         <div class="card-body">
           {% if result.method in ['xgboost_ml', 'hybrid_ml'] and patient_reasons %}
-            <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-5);">The AI looked at patterns in your tumour's gene activity. These were the strongest signals pointing to the {{ result.subtype }} subtype:</p>
+            <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-5);">The chart shows the strongest signals at a glance. Below, each one is explained in plain language with the specific gene involved and how strongly it contributed.</p>
             {% for r in patient_reasons %}
               <div style="display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);background:{% if r.supports %}rgba(196,110,156,0.06){% else %}rgba(94,147,190,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
                 <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">{{ loop.index }}</div>
-                <div>
-                  <p style="font-weight:600;font-size:14px;margin-bottom:4px;">{{ r.label }}</p>
+                <div style="flex:1;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:4px;">
+                    <p style="font-weight:600;font-size:14px;margin:0;">{{ r.label }}
+                      {% if r.gene %}<span style="font-family:var(--font-mono,monospace);font-size:12px;color:var(--lumi-muted);font-weight:500;">· gene {{ r.gene }}</span>{% endif %}
+                    </p>
+                    <span style="font-size:12px;font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};white-space:nowrap;">
+                      {% if r.supports %}+{% else %}−{% endif %}{{ r.magnitude }} contribution
+                    </span>
+                  </div>
                   <p style="font-size:13px;color:var(--lumi-slate);margin:0;line-height:1.5;">{{ r.sentence }}
                     <span style="font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">{% if r.supports %}Pointed toward this subtype.{% else %}Pointed slightly away.{% endif %}</span></p>
                 </div>
               </div>
             {% endfor %}
             <div class="info-panel mt-4">
-              These plain-language explanations summarise why the AI classified your tumour as <strong>{{ result.subtype }} ({{ info.get('full_name', result.subtype) }})</strong>. Your care team can walk through these findings with you in detail.
+              The "contribution" value is the SHAP magnitude: how much that gene's activity moved the model's decision. Higher means a stronger influence. Your care team can walk through these findings with you in detail.
             </div>
           {% elif result.top_reasons %}
             <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-4);">Based on your clinical information, here is what pointed to this subtype:</p>
@@ -240,9 +247,25 @@
               <span class="badge badge-primary">{{ trial.status }}</span>
               <span class="badge badge-info">{{ trial.phase }}</span>
             </div>
-            <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:0;">Reference:
-              {% if trial.url %}<a href="{{ trial.url }}" target="_blank" rel="noopener" style="font-weight:500;">{{ trial.nct }}</a>{% else %}{{ trial.nct }}{% endif %}
-              · {{ trial.location }}</p>
+            <div style="font-size:13px;color:var(--lumi-slate);line-height:1.7;margin-bottom:var(--sp-3);">
+              <div style="display:flex;align-items:flex-start;gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span><strong>Location:</strong> {{ trial.location }}</span>
+              </div>
+              {% if trial.countries %}
+              <div style="display:flex;align-items:flex-start;gap:6px;margin-top:2px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span><strong>Countries:</strong> {{ trial.countries|join(', ') }}</span>
+              </div>
+              {% endif %}
+              <div style="margin-top:2px;"><strong>Reference:</strong> {{ trial.nct }}</div>
+            </div>
+            {% if trial.url %}
+            <a href="{{ trial.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+              View on ClinicalTrials.gov
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-left:4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+            {% endif %}
           </div>
           {% endfor %}
           {% if not result.trials %}
@@ -611,32 +634,34 @@
 (function () {
   var data = JSON.parse(document.getElementById('chartData').textContent);
 
-  // ── Donut: subtype probabilities ────────────────────────────────────
+  // ── Donut: confidence gauge for the result subtype only ─────────────
   var _charts = [];
   var donut = document.getElementById('confidenceDonut');
-  if (donut && window.Chart && data.probabilities) {
+  if (donut && window.Chart && data.confidence != null) {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var otherColor = isDark ? '#3A2E37' : '#E8D4E0';
+    var trackColor = isDark ? '#2A2230' : '#F1E3EB';
     var borderCol = isDark ? '#1B2430' : '#ffffff';
-    var textCol = isDark ? '#A9B6C4' : '#5A6B7B';
-    var labels = Object.keys(data.probabilities);
-    var values = labels.map(function (k) { return data.probabilities[k]; });
-    // Each subtype shows in its own colour, so the donut is naturally
-    // multi-colour even when one subtype dominates.
-    var colors = labels.map(function (k) {
-      return data.subtypeColors[k] || otherColor;
-    });
+    var conf = Math.max(0, Math.min(100, parseFloat(data.confidence) || 0));
+    var subColor = data.subtypeColors[data.subtype] || '#C46E9C';
     _charts.push(new Chart(donut, {
       type: 'doughnut',
-      data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: borderCol }] },
+      data: {
+        labels: ['Confidence', 'Remaining'],
+        datasets: [{
+          data: [conf, 100 - conf],
+          backgroundColor: [subColor, trackColor],
+          borderWidth: 2,
+          borderColor: borderCol
+        }]
+      },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         cutout: '72%',
         animation: { duration: 700 },
         plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 12, color: textCol } },
-          tooltip: { callbacks: { label: function (c) { return c.label + ': ' + c.parsed + '%'; } } }
+          legend: { display: false },
+          tooltip: { enabled: false }
         }
       }
     }));

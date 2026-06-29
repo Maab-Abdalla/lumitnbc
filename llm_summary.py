@@ -1,13 +1,13 @@
 """
 LLM layer for LumiTNBC: personalised patient summary.
 
-This module is SCAFFOLDED BUT DISABLED by default. It generates a short,
+This module is OPTIONAL and disabled by default. It generates a short,
 plain-language summary paragraph tailored to a single patient's result by
-calling the Anthropic API.
+calling the OpenAI API.
 
 To enable:
-    1. pip install anthropic   (already listed in requirements.txt, commented)
-    2. Set the ANTHROPIC_API_KEY environment variable.
+    1. pip install openai   (already listed in requirements.txt)
+    2. Set the OPENAI_API_KEY environment variable.
 
 When no key is present, is_enabled() returns False and the results page
 simply does not show the "Your Personal Summary" card, with no cost and no errors.
@@ -19,14 +19,22 @@ No raw gene-level data is sent beyond the top feature labels.
 
 import os
 
+# Load .env if present so the key is available even when imported outside the
+# Flask app. Safe to call repeatedly.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Model used for the one-shot summary. Small/fast model is plenty here.
-SUMMARY_MODEL = "claude-haiku-4-5-20251001"
+SUMMARY_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")
 MAX_TOKENS = 320
 
 
 def is_enabled():
     """True only when an API key is configured in the environment."""
-    return bool(os.environ.get("ANTHROPIC_API_KEY"))
+    return bool(os.environ.get("OPENAI_API_KEY"))
 
 
 def _plain_label(gene, gene_label_fn):
@@ -87,21 +95,21 @@ def generate_summary(result, gene_label_fn):
         return {"enabled": False, "summary": None, "error": None}
 
     try:
-        import anthropic  # imported lazily so the app runs without the package
+        from openai import OpenAI  # imported lazily so the app runs without the package
     except ImportError:
         return {"enabled": False, "summary": None,
-                "error": "anthropic package not installed"}
+                "error": "openai package not installed"}
 
     try:
-        client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
-        msg = client.messages.create(
+        client = OpenAI()  # reads OPENAI_API_KEY from env
+        resp = client.chat.completions.create(
             model=SUMMARY_MODEL,
             max_tokens=MAX_TOKENS,
+            temperature=0.4,
             messages=[{"role": "user",
                        "content": build_prompt(result, gene_label_fn)}],
         )
-        text = "".join(block.text for block in msg.content
-                       if getattr(block, "type", None) == "text").strip()
+        text = (resp.choices[0].message.content or "").strip()
         return {"enabled": True, "summary": text or None, "error": None}
     except Exception as exc:  # network, auth, rate-limit, etc.
         return {"enabled": False, "summary": None, "error": str(exc)}

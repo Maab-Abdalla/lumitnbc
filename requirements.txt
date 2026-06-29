@@ -12,6 +12,10 @@ shap>=0.43
 gunicorn>=21.0
 psycopg2-binary>=2.9
 
-# Optional: enables the LLM "Your Personal Summary" layer.
-# Set ANTHROPIC_API_KEY to activate; the app runs fine without it.
-# anthropic>=0.40
+# LLM features (both optional, both use OpenAI; activate when OPENAI_API_KEY is set):
+#   - Chatbot (LLM + RAG grounded in chatbot_kb.json)
+#   - Patient "Your Personal Summary" card
+# Without the key, the chatbot falls back to the offline keyword bot and the
+# summary card is hidden. The app runs fine with no key set.
+openai>=1.0
+python-dotenv>=1.0

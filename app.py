@@ -8,6 +8,16 @@ import uuid
 from datetime import datetime
 from functools import wraps
 
+# Load variables from a local .env file if present (so OPENAI_API_KEY, SECRET_KEY,
+# etc. work in any terminal, PowerShell included). Harmless in production: Railway
+# sets real env vars and there is no .env file there. No-op if python-dotenv
+# isn't installed.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from flask import (
     Flask, render_template, request, jsonify,
     session, redirect, url_for, abort, send_from_directory
@@ -141,6 +151,118 @@ SUBTYPE_INFO = {
 }
 
 
+# Curated YouTube videos for the Resources page. Fill this list with vetted
+# videos (see RESOURCE_VIDEOS below). Each card shows the real YouTube
+# thumbnail and opens the video in a new tab when clicked.
+def youtube_thumb(video_id):
+    """Public YouTube thumbnail URL for a given video ID (no API needed)."""
+    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+
+def youtube_watch_url(video_id):
+    return f"https://www.youtube.com/watch?v={video_id}"
+
+
+# Add entries here. Each: {"id": "<youtube_video_id>", "title": "...",
+# "source": "...", "desc": "..."}. The id is the part after v= in the URL.
+RESOURCE_VIDEOS = [
+    {"id": "_UqT2846QoU",
+     "title": "Triple Negative Breast Cancer (TNBC): Treatment Options and What to Expect",
+     "source": "Yerbba – Breast Cancer",
+     "desc": "An overview of TNBC treatment options and what patients can expect."},
+    {"id": "hgrr690u7H0",
+     "title": "Triple Negative Breast Cancer (TNBC) | Dr Rachel Dear",
+     "source": "St Vincent's Hospital, Sydney",
+     "desc": "Dr Rachel Dear explains triple-negative breast cancer."},
+    {"id": "YsCNHXWKRZo",
+     "title": "The challenges of treating early-stage TNBC",
+     "source": "VJOncology",
+     "desc": "A look at the clinical challenges of treating early-stage TNBC."},
+    {"id": "TkhMA0EbGgU",
+     "title": "Triple-Negative Breast Cancer (TNBC) Breakthroughs: Hope, Innovation, and New Treatments",
+     "source": "The Informed Woman Magazine",
+     "desc": "Recent breakthroughs and emerging treatments for TNBC."},
+]
+
+
+# Curated, real external resources from reputable organisations. These are
+# trusted general TNBC/breast-cancer support sources, not medical advice.
+RESOURCE_LINKS = [
+    {"category": "Understanding TNBC",
+     "icon": "book",
+     "items": [
+        {"title": "Triple-Negative Breast Cancer Overview",
+         "org": "American Cancer Society",
+         "url": "https://www.cancer.org/cancer/types/breast-cancer/about/types-of-breast-cancer/triple-negative.html",
+         "desc": "What triple-negative breast cancer is and how it differs from other types."},
+        {"title": "TNBC Information & Support",
+         "org": "Breastcancer.org",
+         "url": "https://www.breastcancer.org/types/triple-negative",
+         "desc": "Plain-language guide covering diagnosis, treatment options and questions to ask."},
+        {"title": "Breast Cancer Treatment (PDQ)",
+         "org": "National Cancer Institute",
+         "url": "https://www.cancer.gov/types/breast/patient/breast-treatment-pdq",
+         "desc": "Detailed, regularly-updated treatment information from the NCI."},
+     ]},
+    {"category": "Support & Community",
+     "icon": "community",
+     "items": [
+        {"title": "TNBC Foundation",
+         "org": "Triple Negative Breast Cancer Foundation",
+         "url": "https://tnbcfoundation.org/",
+         "desc": "Education, support resources and research news focused on TNBC."},
+        {"title": "Patient Support Services",
+         "org": "Susan G. Komen",
+         "url": "https://www.komen.org/support-resources/",
+         "desc": "Helpline, financial assistance information and local support."},
+        {"title": "Living Beyond Breast Cancer",
+         "org": "LBBC",
+         "url": "https://www.lbbc.org/",
+         "desc": "Programmes and community for people affected by breast cancer."},
+     ]},
+]
+
+# General, subtype-tailored FAQ content. Educational only, written in plain
+# language; encourages discussion with the patient's own care team.
+SUBTYPE_FAQS = {
+    "BL1": [
+        {"q": "What does Basal-Like 1 mean for my treatment?",
+         "a": "BL1 tumours tend to grow quickly and often respond well to chemotherapy, especially platinum-based regimens. Your oncologist will decide the best plan for your specific situation."},
+        {"q": "Why is chemotherapy often used for this subtype?",
+         "a": "BL1 cells divide rapidly and have active DNA-repair pathways, which makes them sensitive to chemotherapy drugs that target dividing cells. This is why response rates are often high."},
+    ],
+    "BL2": [
+        {"q": "What is different about Basal-Like 2?",
+         "a": "BL2 tumours show activity in growth-signal and metabolic pathways. Research into therapies that target these pathways is ongoing, so clinical trials can be especially relevant."},
+        {"q": "Should I ask about clinical trials?",
+         "a": "It is worth discussing with your care team. Because BL2 biology is an active research area, you may be eligible for studies testing newer targeted approaches."},
+    ],
+    "LAR": [
+        {"q": "What does Luminal Androgen Receptor mean?",
+         "a": "LAR tumours express the androgen receptor and behave differently from other TNBC subtypes. This opens the possibility of treatments that target hormone-related pathways, which your oncologist can explain."},
+        {"q": "Is LAR treated the same as other TNBC?",
+         "a": "Not always. Because LAR tumours use androgen-receptor signalling, some trials study anti-androgen therapies for this subtype. Your care team can advise whether that is relevant for you."},
+    ],
+    "M": [
+        {"q": "What is the Mesenchymal subtype?",
+         "a": "Mesenchymal tumours show patterns linked to cell movement and tissue structure. Researchers are studying treatments that target these pathways and blood-vessel growth."},
+        {"q": "What treatment research applies to me?",
+         "a": "Several trials explore therapies aimed at the pathways active in Mesenchymal tumours. Ask your oncologist whether any current studies fit your situation."},
+    ],
+}
+
+# General FAQs shown to everyone regardless of subtype.
+GENERAL_FAQS = [
+    {"q": "Does my subtype change my diagnosis?",
+     "a": "Subtype is extra detail about the biology of a triple-negative tumour. It helps guide treatment and trial options but does not replace your full diagnosis and staging from your medical team."},
+    {"q": "How accurate is this classification?",
+     "a": "The model is a decision-support tool, not a diagnosis. It reports a confidence level with every result. Always confirm findings with your oncologist before making any decisions."},
+    {"q": "What should I do with these results?",
+     "a": "Bring them to your care team. They can interpret the subtype in the context of your full medical picture and discuss whether it affects your treatment or trial eligibility."},
+]
+
+
+
 # Plain-language labels for SHAP features, shown to patients instead of raw
 # gene symbols. (label, sentence); keep the chart label short (the first item).
 GENE_PLAIN_LABELS = {
@@ -194,15 +316,22 @@ def build_patient_shap_chart(result):
 
 
 def build_patient_reasons(result):
-    """Top-5 SHAP features as plain-language reason cards for the patient view."""
+    """Top-5 SHAP features as plain-language reason cards for the patient view.
+    Includes gene-level detail (gene symbol + signed contribution) so this
+    section adds information the quick bar chart does not."""
     feats = (result or {}).get("shap_features") or []
     reasons = []
     for f in feats[:5]:
-        label, sentence = gene_label(f.get("gene", ""))
+        gene = f.get("gene", "")
+        label, sentence = gene_label(gene)
+        shap_val = f.get("shap_value", 0)
         reasons.append({
             "label": label,
             "sentence": sentence,
-            "supports": f.get("shap_value", 0) > 0,
+            "gene": gene,
+            "value": round(shap_val, 4),
+            "magnitude": round(abs(shap_val), 4),
+            "supports": shap_val > 0,
         })
     return reasons
 
@@ -236,6 +365,27 @@ def _register_routes(app):
                     .limit(10).all())
         return render_template("dashboard.html", user=user.to_dict(),
                                analyses=[a.to_dict() for a in analyses])
+
+    @app.route("/resources")
+    @login_required
+    def resources():
+        user = current_user()
+        # Patients see content tailored to their most recent subtype, if any.
+        latest = (Analysis.query
+                  .filter_by(user_id=user.id)
+                  .order_by(Analysis.created_at.desc())
+                  .first())
+        subtype = latest.subtype if latest else None
+        return render_template("resources.html",
+                               user=user.to_dict(),
+                               subtype=subtype,
+                               subtype_info=SUBTYPE_INFO,
+                               resource_links=RESOURCE_LINKS,
+                               resource_videos=RESOURCE_VIDEOS,
+                               youtube_thumb=youtube_thumb,
+                               youtube_watch_url=youtube_watch_url,
+                               subtype_faqs=SUBTYPE_FAQS,
+                               general_faqs=GENERAL_FAQS)
 
     @app.route("/classification")
     def classification():
@@ -282,7 +432,7 @@ def _register_routes(app):
                                subtype_info=SUBTYPE_INFO,
                                patient_shap_chart=build_patient_shap_chart(result),
                                patient_reasons=build_patient_reasons(result),
-                               llm_summary_enabled=bool(os.environ.get("ANTHROPIC_API_KEY")),
+                               llm_summary_enabled=llm_summary.is_enabled(),
                                user=user_dict)
 
     @app.route("/profile")
@@ -319,7 +469,8 @@ def _register_routes(app):
         return render_template("provider-dashboard.html",
                                user=user.to_dict(),
                                pending=[r.to_dict() for r in pending],
-                               reviewed=[r.to_dict() for r in reviewed])
+                               reviewed=[r.to_dict() for r in reviewed],
+                               stats=_population_stats())
 
     @app.route("/review/<int:request_id>")
     @role_required("provider", "admin")
@@ -602,12 +753,31 @@ def _register_routes(app):
             abort(403)
         return jsonify(a.to_dict())
 
+    @app.route("/api/chat", methods=["POST"])
+    def api_chat():
+        """Chatbot endpoint. Tries the LLM+RAG path; if no API key (or any
+        failure) it falls back to the offline keyword responder. Scoped to
+        general TNBC / app help only, no patient-specific advice."""
+        import chatbot_llm
+        data = request.get_json(silent=True) or {}
+        message = (data.get("message") or "").strip()
+        history = data.get("history") or []
+        if not message:
+            return jsonify({"reply": "Please type a question.", "source": "system"})
+
+        result = chatbot_llm.generate_reply(message, history)
+        if result.get("enabled") and result.get("reply"):
+            return jsonify({"reply": result["reply"], "source": "llm"})
+
+        # Fallback: offline keyword responder (no API key or LLM unavailable).
+        return jsonify({"reply": _keyword_fallback(message), "source": "keyword"})
+
     @app.route("/api/summary/<analysis_id>")
     @login_required
     def api_summary(analysis_id):
         """
-        LLM layer (scaffolded). Returns a personalised plain-language summary
-        when ANTHROPIC_API_KEY is set; otherwise {"enabled": false} so the UI
+        LLM layer. Returns a personalised plain-language summary
+        when OPENAI_API_KEY is set; otherwise {"enabled": false} so the UI
         hides the card. Same access control as the results page.
         """
         user = current_user()
@@ -692,6 +862,103 @@ def _register_routes(app):
 
 def _generate_analysis_id():
     return f"LT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+
+
+def _keyword_fallback(message: str) -> str:
+    """Offline keyword responder used when the LLM chatbot is unavailable.
+    Scoped to general TNBC / app help; declines medical advice."""
+    m = (message or "").lower()
+
+    def has(*words):
+        return any(w in m for w in words)
+
+    # Decline medical-advice style questions even in fallback mode.
+    if has("should i", "what should i do", "will i survive", "how long",
+           "prognosis", "cure", "is it curable", "my treatment", "best treatment"):
+        return ("I can't give medical advice or discuss your personal treatment "
+                "or prognosis. Please talk this through with your oncologist or "
+                "care team, they know your full situation.")
+
+    if has("what is tnbc", "triple negative", "triple-negative"):
+        return ("Triple-negative breast cancer (TNBC) lacks oestrogen receptors, "
+                "progesterone receptors, and excess HER2, so it is treated "
+                "differently from other breast cancers. Molecular subtyping helps "
+                "understand its biology.")
+    if has("subtype", "bl1", "bl2", "lar", "mesenchymal"):
+        return ("LumiTNBC classifies TNBC into four molecular subtypes: BL1, BL2, "
+                "LAR, and M. Each reflects different tumour biology and is an area "
+                "of active research.")
+    if has("how", "start", "upload", "use", "begin"):
+        return ("Go to 'New Analysis', upload a gene-expression CSV (or try a "
+                "sample file), and click Start Analysis. Results appear in about a "
+                "minute with the subtype, confidence, factors, and matched trials.")
+    if has("shap", "explain", "why", "factor"):
+        return ("The model uses SHAP to show which gene signals most influenced "
+                "the result, each with a direction and strength, so the decision "
+                "is transparent rather than a black box.")
+    if has("confidence", "accurate", "sure", "reliable"):
+        return ("Each result shows a confidence level: how strongly the model "
+                "favours the predicted subtype over the others. It reflects the "
+                "model's certainty, not a guarantee, always confirm with your "
+                "care team.")
+    if has("trial", "clinical", "study"):
+        return ("After classification, the app lists clinical trials that may fit "
+                "the subtype, drawn from ClinicalTrials.gov, with location, status "
+                "and a link to each official trial page.")
+    if has("privacy", "secure", "safe", "data"):
+        return ("Uploaded data is used only to produce your result. Guest "
+                "analyses are not saved, and providers only ever see a "
+                "privacy-safe patient code, never your name.")
+    if has("hi", "hello", "hey", "help"):
+        return ("Hi! I'm Lumi. I can answer general questions about TNBC, the four "
+                "subtypes, how this app works, and how to read your results. What "
+                "would you like to know?")
+    return ("I can help with general questions about TNBC, the molecular "
+            "subtypes, how LumiTNBC works, and how to read your results. I can't "
+            "give medical advice, for anything about your personal care, please "
+            "speak with your oncologist.")
+
+
+def _population_stats() -> dict:
+    """Aggregate, de-identified statistics across all analyses in the system.
+    Used on the provider dashboard. Contains no patient-identifying data."""
+    from sqlalchemy import func
+    total = Analysis.query.count()
+    order = ["BL1", "BL2", "LAR", "M"]
+    names = {"BL1": "Basal-Like 1", "BL2": "Basal-Like 2",
+             "LAR": "Luminal AR", "M": "Mesenchymal"}
+
+    # Count per subtype
+    rows = (db.session.query(Analysis.subtype, func.count(Analysis.id))
+            .group_by(Analysis.subtype).all())
+    counts = {s: 0 for s in order}
+    for subtype, n in rows:
+        if subtype in counts:
+            counts[subtype] = n
+
+    dist = []
+    for s in order:
+        pct = round(counts[s] / total * 100, 1) if total else 0.0
+        dist.append({"subtype": s, "name": names[s], "count": counts[s], "pct": pct})
+
+    # Most common subtype
+    most_common = max(dist, key=lambda d: d["count"]) if total else None
+
+    # Average confidence (overall)
+    avg_conf = db.session.query(func.avg(Analysis.confidence)).scalar()
+    avg_conf = round(avg_conf, 1) if avg_conf is not None else None
+
+    reviews_total = ReviewRequest.query.count()
+    reviews_done = ReviewRequest.query.filter_by(status="reviewed").count()
+
+    return {
+        "total": total,
+        "distribution": dist,
+        "most_common": most_common,
+        "avg_confidence": avg_conf,
+        "reviews_total": reviews_total,
+        "reviews_done": reviews_done,
+    }
 
 
 def _enrich_result(result: dict, user: User, filename: str = None) -> dict:

@@ -45,29 +45,38 @@ SUBTYPE_QUERY = {
 FALLBACK_TRIALS = {
     "BL1": [
         {"nct": "NCT05123456", "title": "Phase II Trial: PD-L1 Inhibitor + Carboplatin for BL1 TNBC",
-         "phase": "Phase II", "match": 95, "status": "Recruiting", "location": "Multiple Sites (USA)", "sponsor": "National Cancer Institute"},
+         "phase": "Phase II", "match": 95, "status": "Recruiting", "location": "Multiple Sites (USA)", "sponsor": "National Cancer Institute",
+         "url": "https://clinicaltrials.gov/study/NCT05123456", "countries": ["United States"]},
         {"nct": "NCT05234567", "title": "Targeted Therapy with PARP Inhibitor for Basal-Like TNBC",
-         "phase": "Phase III", "match": 88, "status": "Recruiting", "location": "Dana-Farber Cancer Institute, Boston", "sponsor": "AstraZeneca"},
+         "phase": "Phase III", "match": 88, "status": "Recruiting", "location": "Dana-Farber Cancer Institute, Boston", "sponsor": "AstraZeneca",
+         "url": "https://clinicaltrials.gov/study/NCT05234567", "countries": ["United States"]},
         {"nct": "NCT05345678", "title": "Neoadjuvant Chemotherapy Optimization for High-Proliferation TNBC",
-         "phase": "Phase II", "match": 79, "status": "Active", "location": "MD Anderson Cancer Center, Houston", "sponsor": "NCI Cooperative Group"},
+         "phase": "Phase II", "match": 79, "status": "Active", "location": "MD Anderson Cancer Center, Houston", "sponsor": "NCI Cooperative Group",
+         "url": "https://clinicaltrials.gov/study/NCT05345678", "countries": ["United States"]},
     ],
     "BL2": [
         {"nct": "NCT05456789", "title": "Growth Factor Receptor Inhibitor for BL2 TNBC",
-         "phase": "Phase II", "match": 91, "status": "Recruiting", "location": "Memorial Sloan Kettering, New York", "sponsor": "Genentech"},
+         "phase": "Phase II", "match": 91, "status": "Recruiting", "location": "Memorial Sloan Kettering, New York", "sponsor": "Genentech",
+         "url": "https://clinicaltrials.gov/study/NCT05456789", "countries": ["United States"]},
         {"nct": "NCT05567890", "title": "TGF-β Pathway Targeted Therapy in TNBC",
-         "phase": "Phase I/II", "match": 84, "status": "Recruiting", "location": "Multiple Sites (USA, EU)", "sponsor": "Merck"},
+         "phase": "Phase I/II", "match": 84, "status": "Recruiting", "location": "Multiple Sites (USA, EU)", "sponsor": "Merck",
+         "url": "https://clinicaltrials.gov/study/NCT05567890", "countries": ["United States", "Europe"]},
     ],
     "LAR": [
         {"nct": "NCT05678901", "title": "Enzalutamide + CDK4/6 Inhibitor for LAR TNBC",
-         "phase": "Phase II", "match": 93, "status": "Recruiting", "location": "Vanderbilt-Ingram Cancer Center, Nashville", "sponsor": "Pfizer / Astellas"},
+         "phase": "Phase II", "match": 93, "status": "Recruiting", "location": "Vanderbilt-Ingram Cancer Center, Nashville", "sponsor": "Pfizer / Astellas",
+         "url": "https://clinicaltrials.gov/study/NCT05678901", "countries": ["United States"]},
         {"nct": "NCT05789012", "title": "PI3K/AKT Inhibitor Combined with Anti-Androgen Therapy",
-         "phase": "Phase II", "match": 86, "status": "Recruiting", "location": "Multiple Sites (USA)", "sponsor": "Novartis"},
+         "phase": "Phase II", "match": 86, "status": "Recruiting", "location": "Multiple Sites (USA)", "sponsor": "Novartis",
+         "url": "https://clinicaltrials.gov/study/NCT05789012", "countries": ["United States"]},
     ],
     "M": [
         {"nct": "NCT05890123", "title": "Anti-Angiogenic + EMT Inhibitor for Mesenchymal TNBC",
-         "phase": "Phase II", "match": 90, "status": "Recruiting", "location": "Johns Hopkins, Baltimore", "sponsor": "Bristol-Myers Squibb"},
+         "phase": "Phase II", "match": 90, "status": "Recruiting", "location": "Johns Hopkins, Baltimore", "sponsor": "Bristol-Myers Squibb",
+         "url": "https://clinicaltrials.gov/study/NCT05890123", "countries": ["United States"]},
         {"nct": "NCT05901234", "title": "Wnt/TGF-β Dual Pathway Inhibitor in Mesenchymal TNBC",
-         "phase": "Phase I/II", "match": 82, "status": "Active", "location": "Multiple Sites (USA, Asia)", "sponsor": "Eli Lilly"},
+         "phase": "Phase I/II", "match": 82, "status": "Active", "location": "Multiple Sites (USA, Asia)", "sponsor": "Eli Lilly",
+         "url": "https://clinicaltrials.gov/study/NCT05901234", "countries": ["United States", "Asia"]},
     ],
 }
 
@@ -101,11 +110,30 @@ def _location_label(contacts_module):
     locs = (contacts_module or {}).get("locations") or []
     if not locs:
         return "Location not specified"
+    # Distinct countries across all sites: most useful for "can I access this?"
+    countries = []
+    for loc in locs:
+        c = loc.get("country")
+        if c and c not in countries:
+            countries.append(c)
     first = locs[0]
-    parts = [first.get("city"), first.get("country")]
-    label = ", ".join(p for p in parts if p)
-    extra = len(locs) - 1
-    return f"{label} (+{extra} more)" if extra > 0 else (label or "Location not specified")
+    city_country = ", ".join(p for p in [first.get("city"), first.get("country")] if p)
+    extra_sites = len(locs) - 1
+    base = city_country or "Location not specified"
+    if extra_sites > 0:
+        base = f"{base} (+{extra_sites} more site{'s' if extra_sites != 1 else ''})"
+    return base
+
+
+def _countries_label(contacts_module):
+    """Distinct list of countries a trial runs in (for region accessibility)."""
+    locs = (contacts_module or {}).get("locations") or []
+    countries = []
+    for loc in locs:
+        c = loc.get("country")
+        if c and c not in countries:
+            countries.append(c)
+    return countries
 
 
 def _sponsor_label(sponsor_module):
@@ -134,6 +162,7 @@ def _parse_study(study, rank, total):
         "match": _match_score(rank, total),
         "status": _status_label(proto.get("statusModule")),
         "location": _location_label(proto.get("contactsLocationsModule")),
+        "countries": _countries_label(proto.get("contactsLocationsModule")),
         "sponsor": _sponsor_label(proto.get("sponsorCollaboratorsModule")),
         "url": f"https://clinicaltrials.gov/study/{nct}" if nct else None,
     }

@@ -15,6 +15,51 @@
       <div class="stat-card" style="border-left-color:var(--lumi-blue);"><div class="stat-value" data-countup="{{ pending|length + reviewed|length }}">{{ pending|length + reviewed|length }}</div><div class="stat-label">Total Requests</div></div>
     </div>
 
+    <!-- Population insights (aggregate, de-identified) -->
+    <div class="card mb-8 reveal">
+      <div class="card-header"><h2 class="card-title mb-0">Population Insights</h2></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">Aggregate statistics across all {{ stats.total }} analysis{{ '' if stats.total == 1 else 'es' }} run in the system. No patient-identifying information is shown.</p>
+
+        {% if stats.total %}
+        <div class="stats-grid mb-6">
+          <div class="stat-card">
+            <div class="stat-value">{{ stats.most_common.subtype if stats.most_common else '-' }}</div>
+            <div class="stat-label">Most common subtype{% if stats.most_common %} ({{ stats.most_common.pct }}%){% endif %}</div>
+          </div>
+          <div class="stat-card" style="border-left-color:var(--lumi-blue);">
+            <div class="stat-value" data-countup="{{ stats.total }}">{{ stats.total }}</div>
+            <div class="stat-label">Total analyses</div>
+          </div>
+          <div class="stat-card" style="border-left-color:var(--lumi-success);">
+            <div class="stat-value">{{ stats.avg_confidence if stats.avg_confidence is not none else '-' }}%</div>
+            <div class="stat-label">Average confidence</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:15px;margin-bottom:var(--sp-4);">Subtype distribution</h3>
+        {% set sub_colors = {'BL1':'var(--sub-bl1)','BL2':'var(--sub-bl2)','LAR':'var(--sub-lar)','M':'var(--sub-m)'} %}
+        {% for d in stats.distribution %}
+        <div style="margin-bottom:var(--sp-4);">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+            <span style="font-weight:600;color:var(--lumi-navy);">{{ d.name }} ({{ d.subtype }})</span>
+            <span style="color:var(--lumi-slate);">{{ d.count }} {{ 'patient' if d.count == 1 else 'patients' }} &middot; {{ d.pct }}%</span>
+          </div>
+          <div style="height:10px;background:var(--lumi-blush);border-radius:999px;overflow:hidden;">
+            <div style="height:100%;width:{{ d.pct }}%;background:{{ sub_colors[d.subtype] }};border-radius:999px;transition:width 0.6s ease;"></div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="5" width="3" height="13"></rect></svg>
+          <h3>No analyses yet</h3>
+          <p>Population statistics will appear here once patients have run analyses.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
     <!-- Pending -->
     <div class="card mb-6">
       <div class="card-header">

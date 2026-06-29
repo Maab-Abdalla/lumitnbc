@@ -16,6 +16,7 @@
         <a href="{{ url_for('dashboard') }}" class="nav-link {% if active_page=='dashboard' %}active{% endif %}">Dashboard</a>
         <a href="{{ url_for('classification') }}" class="nav-link {% if active_page=='classification' %}active{% endif %}">New Analysis</a>
         <a href="{{ url_for('results') }}" class="nav-link {% if active_page=='results' %}active{% endif %}">Results</a>
+        <a href="{{ url_for('resources') }}" class="nav-link {% if active_page=='resources' %}active{% endif %}">Resources</a>
         <a href="{{ url_for('profile') }}" class="nav-link {% if active_page=='profile' %}active{% endif %}">Profile</a>
       {% elif session.get('role') == 'provider' %}
         <a href="{{ url_for('provider_dashboard') }}" class="nav-link {% if active_page=='provider' %}active{% endif %}">Review Queue</a>
