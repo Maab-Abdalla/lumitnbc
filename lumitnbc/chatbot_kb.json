@@ -1,0 +1,559 @@
+{
+  "metadata": {
+    "system": "LumiTNBC",
+    "version": "1.1",
+    "description": "RAG knowledge base for LumiTNBC chatbot \u2014 covers system usage, TNBC subtypes, explainability, general TNBC medical info, and model/dataset transparency.",
+    "last_updated": "2026-06",
+    "chunk_count": 45
+  },
+  "chunks": [
+    {
+      "id": "sys_001",
+      "category": "system",
+      "tags": [
+        "lumitnbc",
+        "overview",
+        "what is",
+        "introduction"
+      ],
+      "title": "What is LumiTNBC?",
+      "content": "LumiTNBC is an explainable AI system designed to classify Triple-Negative Breast Cancer (TNBC) into molecular subtypes. It uses a machine learning model (XGBoost) trained on genomic and clinical data from two large public datasets: METABRIC and TCGA-BRCA. The system predicts which TNBC subtype a patient's tumour belongs to, and explains its prediction using SHAP and LIME \u2014 two AI explainability techniques that show which genes and features most influenced the result."
+    },
+    {
+      "id": "sys_002",
+      "category": "system",
+      "tags": [
+        "lumitnbc",
+        "purpose",
+        "who is it for",
+        "users"
+      ],
+      "title": "Who is LumiTNBC for?",
+      "content": "LumiTNBC is designed as a decision-support tool for oncologists, pathologists, and clinical researchers working with TNBC patients. It can also be used by academic researchers studying TNBC molecular biology. LumiTNBC is NOT a replacement for clinical diagnosis or treatment decisions \u2014 it is a supplementary analytical tool intended to assist, not replace, medical professionals."
+    },
+    {
+      "id": "sys_003",
+      "category": "system",
+      "tags": [
+        "lumitnbc",
+        "how to use",
+        "input",
+        "data"
+      ],
+      "title": "How do I use LumiTNBC?",
+      "content": "To use LumiTNBC, you enter a patient's gene expression data or relevant clinical features into the system's input form. The system accepts numerical feature values corresponding to the biomarkers and genes used in model training. Once submitted, LumiTNBC runs the classification model and returns a predicted TNBC subtype along with a confidence score and explainability outputs (SHAP and LIME visualisations)."
+    },
+    {
+      "id": "sys_004",
+      "category": "system",
+      "tags": [
+        "lumitnbc",
+        "output",
+        "result",
+        "prediction",
+        "confidence"
+      ],
+      "title": "How to read LumiTNBC output",
+      "content": "LumiTNBC outputs three things: (1) Predicted subtype \u2014 one of BL1, BL2, M, or LAR; (2) Confidence score \u2014 a percentage indicating how confident the model is in its prediction (e.g., 87% BL1); (3) Explainability panel \u2014 visual charts showing which features pushed the prediction toward or away from the predicted subtype. A high confidence score (above 75%) suggests a more reliable prediction. Scores below 60% should be interpreted with additional caution."
+    },
+    {
+      "id": "sys_005",
+      "category": "system",
+      "tags": [
+        "lumitnbc",
+        "disclaimer",
+        "limitations",
+        "not a diagnosis"
+      ],
+      "title": "LumiTNBC limitations and disclaimer",
+      "content": "LumiTNBC is a research and decision-support tool, not a certified medical diagnostic device. Its predictions are based on patterns learned from METABRIC and TCGA-BRCA datasets and may not generalise to all populations or clinical settings. The system should never be used as the sole basis for treatment decisions. All outputs must be reviewed and interpreted by a qualified medical professional. Results may be affected by data quality, missing values, or patient populations not represented in the training data."
+    },
+    {
+      "id": "sub_001",
+      "category": "subtype",
+      "tags": [
+        "TNBC",
+        "subtypes",
+        "overview",
+        "classification"
+      ],
+      "title": "TNBC molecular subtypes overview",
+      "content": "TNBC is not a single disease - it is a heterogeneous group of cancers that share the absence of oestrogen receptor (ER), progesterone receptor (PR), and HER2 overexpression, but differ significantly at the molecular level. LumiTNBC classifies tumours into four molecular subtypes based on gene expression profiling: Basal-Like 1 (BL1), Basal-Like 2 (BL2), Luminal Androgen Receptor (LAR), and Mesenchymal (M). Each subtype has distinct biological characteristics, clinical behaviour, and potential treatment sensitivities."
+    },
+    {
+      "id": "sub_002",
+      "category": "subtype",
+      "tags": [
+        "BL1",
+        "Basal-Like 1",
+        "subtype",
+        "characteristics",
+        "treatment"
+      ],
+      "title": "Basal-Like 1 (BL1) subtype",
+      "content": "BL1 is characterised by high expression of cell cycle and DNA damage response genes, particularly those involved in DNA replication and repair (e.g., BRCA1/2, RB, CDKN2A). BL1 tumours tend to have a high proliferation rate and elevated expression of Ki67. Clinically, BL1 is associated with higher rates of pathologic complete response (pCR) to neoadjuvant chemotherapy, particularly platinum-based regimens and PARP inhibitors. Despite good initial chemo-response, BL1 can be aggressive if residual disease remains."
+    },
+    {
+      "id": "sub_003",
+      "category": "subtype",
+      "tags": [
+        "BL2",
+        "Basal-Like 2",
+        "subtype",
+        "characteristics",
+        "treatment"
+      ],
+      "title": "Basal-Like 2 (BL2) subtype",
+      "content": "BL2 differs from BL1 by showing high expression of growth factor signalling genes, including those in the EGF, MET, and Wnt/beta-catenin pathways, alongside myoepithelial markers. BL2 tumours are often more resistant to standard neoadjuvant chemotherapy compared to BL1. They are associated with higher glycolysis and gluconeogenesis activity. BL2 patients tend to have worse outcomes with traditional TNBC chemotherapy protocols, and research is ongoing into targeted therapies involving EGFR and MET inhibitors."
+    },
+    {
+      "id": "sub_004",
+      "category": "subtype",
+      "tags": [
+        "M",
+        "Mesenchymal",
+        "subtype",
+        "characteristics",
+        "treatment"
+      ],
+      "title": "Mesenchymal (M) subtype",
+      "content": "The Mesenchymal (M) subtype is characterised by high expression of genes involved in cell motility, extracellular matrix interactions, and epithelial-to-mesenchymal transition (EMT). M tumours show enrichment in pathways such as TGF-beta signalling, integrin signalling, and angiogenesis. This subtype tends to be associated with a more invasive phenotype. Potential therapeutic strategies include PI3K/mTOR inhibitors and anti-angiogenic agents. M subtype tumours may show variable response to chemotherapy."
+    },
+    {
+      "id": "sub_005",
+      "category": "subtype",
+      "tags": [
+        "LAR",
+        "Luminal Androgen Receptor",
+        "subtype",
+        "androgen receptor",
+        "characteristics",
+        "treatment"
+      ],
+      "title": "Luminal Androgen Receptor (LAR) subtype",
+      "content": "The Luminal Androgen Receptor (LAR) subtype is defined by expression of the androgen receptor (AR) and activation of hormonally-regulated, luminal-like signalling pathways, despite being triple-negative (ER-, PR-, HER2-). LAR tumours are enriched in androgen-receptor signalling and downstream targets, and often show lower proliferation (lower Ki67) than the basal-like subtypes. Clinically, LAR tends to have a lower pathologic complete response (pCR) to standard neoadjuvant chemotherapy, but its reliance on AR signalling makes it a candidate for anti-androgen therapies (such as AR antagonists), which are under active clinical investigation. Recognising the LAR subtype is important because it behaves differently from the basal-like subtypes."
+    },
+    {
+      "id": "sub_006",
+      "category": "subtype",
+      "tags": [
+        "subtype",
+        "comparison",
+        "summary",
+        "table"
+      ],
+      "title": "TNBC subtype comparison summary",
+      "content": "Summary of the four TNBC subtypes used by LumiTNBC: BL1 - high DNA repair gene expression, best chemo response (platinum/PARP inhibitors), high Ki67, aggressive but chemo-sensitive. BL2 - growth factor pathway activation, chemo-resistant, EGFR/MET pathway involvement. LAR - androgen-receptor signalling, lower proliferation, lower pCR to standard chemo, candidate for anti-androgen therapies. M - mesenchymal/EMT features, invasive phenotype, PI3K/mTOR targets. All subtypes are ER-, PR-, HER2-."
+    },
+    {
+      "id": "xai_001",
+      "category": "explainability",
+      "tags": [
+        "SHAP",
+        "explainability",
+        "what is SHAP",
+        "interpretation"
+      ],
+      "title": "What are SHAP values?",
+      "content": "SHAP (SHapley Additive exPlanations) is a method from game theory that explains the output of a machine learning model. For each prediction, SHAP assigns a value to every input feature, representing how much that feature contributed to pushing the prediction higher or lower. In LumiTNBC, positive SHAP values mean a feature pushed the model toward the predicted subtype; negative values mean it pushed against. SHAP values are consistent and locally accurate, making them one of the most trusted explainability methods in clinical AI."
+    },
+    {
+      "id": "xai_002",
+      "category": "explainability",
+      "tags": [
+        "SHAP",
+        "waterfall",
+        "bar chart",
+        "reading",
+        "how to interpret"
+      ],
+      "title": "How to read SHAP output in LumiTNBC",
+      "content": "LumiTNBC's SHAP output typically shows a bar chart or waterfall plot. Each bar represents one feature (e.g., a gene). Red bars indicate features that increased the likelihood of the predicted subtype; blue bars indicate features that decreased it. The longer the bar, the stronger that feature's influence. Features at the top have the highest impact on this specific prediction. For example, if BRCA1 shows a long red bar, it means BRCA1 expression was a major reason the model predicted BL1."
+    },
+    {
+      "id": "xai_003",
+      "category": "explainability",
+      "tags": [
+        "TreeSHAP",
+        "XGBoost",
+        "SHAP variant"
+      ],
+      "title": "What is TreeSHAP?",
+      "content": "TreeSHAP is a fast and exact variant of SHAP designed specifically for tree-based models like XGBoost, LightGBM, and Random Forests. LumiTNBC uses TreeSHAP because its underlying model is XGBoost. TreeSHAP is computationally efficient and produces exact (not approximate) Shapley values, making it ideal for clinical decision support where explanation accuracy matters."
+    },
+    {
+      "id": "xai_008",
+      "category": "explainability",
+      "tags": [
+        "top features",
+        "biomarkers",
+        "genes",
+        "important features"
+      ],
+      "title": "Key biomarkers and features in LumiTNBC",
+      "content": "LumiTNBC's model uses gene expression features derived from METABRIC and TCGA-BRCA datasets. Key biomarkers that frequently appear as important across subtypes include: BRCA1, BRCA2 (DNA repair, BL1); Ki67/MKI67 (proliferation); EGFR (BL2 signalling); CDH1, VIM (EMT markers, M/LAR); CD44, ALDH1 (stem cell markers, LAR); TP53 (tumour suppressor); RB1 (cell cycle); AR (androgen receptor). The relative importance of these features varies per patient and subtype."
+    },
+    {
+      "id": "tnbc_001",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "what is",
+        "triple negative",
+        "definition"
+      ],
+      "title": "What is Triple-Negative Breast Cancer (TNBC)?",
+      "content": "Triple-Negative Breast Cancer (TNBC) is a subtype of breast cancer defined by the absence of three receptors commonly found in other breast cancers: oestrogen receptor (ER\u2212), progesterone receptor (PR\u2212), and human epidermal growth factor receptor 2 (HER2\u2212). Because TNBC lacks these receptors, it does not respond to hormone therapies (like tamoxifen) or HER2-targeted therapies (like trastuzumab). This makes TNBC harder to treat than receptor-positive breast cancers and generally associated with a more aggressive clinical course."
+    },
+    {
+      "id": "tnbc_002",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "epidemiology",
+        "prevalence",
+        "demographics",
+        "statistics"
+      ],
+      "title": "How common is TNBC?",
+      "content": "TNBC accounts for approximately 10\u201320% of all breast cancer diagnoses. It disproportionately affects younger women (under 50), premenopausal women, and women of African descent, who have a higher incidence compared to other ethnic groups. TNBC is also more common in BRCA1 mutation carriers. Globally, TNBC incidence varies by region, but it is consistently associated with worse short-term outcomes compared to other breast cancer subtypes due to limited targeted therapy options."
+    },
+    {
+      "id": "tnbc_003",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "prognosis",
+        "survival",
+        "outcomes"
+      ],
+      "title": "TNBC prognosis and survival",
+      "content": "TNBC is generally associated with a more aggressive course and poorer short-term prognosis compared to hormone receptor-positive breast cancers. The 5-year survival rate varies significantly depending on stage at diagnosis. Early-stage TNBC (Stage I\u2013II) that achieves pathologic complete response (pCR) to neoadjuvant chemotherapy has markedly better outcomes. However, TNBC has a higher risk of recurrence within the first 3\u20135 years, particularly distant metastasis. Long-term survivors (beyond 5 years) tend to have similar survival curves to other breast cancer subtypes."
+    },
+    {
+      "id": "tnbc_004",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "treatment",
+        "chemotherapy",
+        "standard of care"
+      ],
+      "title": "How is TNBC treated?",
+      "content": "The primary treatment for TNBC is chemotherapy, as hormonal and HER2-targeted therapies are not applicable. Standard neoadjuvant chemotherapy regimens often include anthracyclines (e.g., doxorubicin) and taxanes (e.g., paclitaxel). Platinum-based agents (carboplatin, cisplatin) have shown benefit, particularly for BRCA-mutated TNBC. PARP inhibitors (olaparib, talazoparib) are approved for BRCA1/2-mutated metastatic TNBC. Immunotherapy (pembrolizumab/atezolizumab) is increasingly used in combination with chemo for PD-L1-positive or early high-risk TNBC. Antibody-drug conjugates (sacituzumab govitecan) are used in metastatic settings."
+    },
+    {
+      "id": "tnbc_005",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "vs other breast cancer",
+        "difference",
+        "comparison"
+      ],
+      "title": "How is TNBC different from other breast cancers?",
+      "content": "Breast cancer is broadly classified by receptor status: hormone receptor-positive (ER+ and/or PR+), HER2-positive, and triple-negative. Hormone receptor-positive cancers can be treated with oestrogen-blocking drugs. HER2-positive cancers can be targeted with trastuzumab or lapatinib. TNBC, by definition, cannot use either approach, leaving chemotherapy and emerging immunotherapy/targeted agents as the main options. TNBC also tends to be more genomically unstable, have higher tumour mutational burden, and progress faster than luminal subtypes."
+    },
+    {
+      "id": "tnbc_006",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "BRCA",
+        "genetics",
+        "hereditary"
+      ],
+      "title": "TNBC and BRCA mutations",
+      "content": "BRCA1 and BRCA2 are tumour suppressor genes involved in DNA repair. BRCA1 mutations are strongly associated with TNBC \u2014 approximately 70\u201380% of BRCA1-mutated breast cancers are triple-negative. BRCA2 mutations are more commonly associated with HER2-positive or ER-positive cancers but can also lead to TNBC. BRCA mutation testing is recommended for TNBC patients because BRCA status influences treatment decisions: PARP inhibitors are specifically approved for BRCA-mutated metastatic breast cancer."
+    },
+    {
+      "id": "tnbc_007",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "diagnosis",
+        "pathology",
+        "biopsy",
+        "IHC"
+      ],
+      "title": "How is TNBC diagnosed?",
+      "content": "TNBC is diagnosed through standard breast cancer diagnostic procedures: mammography or ultrasound identifies the tumour, and a biopsy obtains tissue for pathological analysis. Immunohistochemistry (IHC) testing determines receptor status: ER\u2212, PR\u2212, and HER2\u2212 (confirmed by IHC score 0 or 1+, or 2+ with negative FISH/ISH test). Molecular subtyping (such as what LumiTNBC performs) requires gene expression profiling, which typically uses RNA sequencing or microarray data from tumour tissue."
+    },
+    {
+      "id": "tnbc_008",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "FAQ",
+        "patient questions",
+        "common questions"
+      ],
+      "title": "Frequently asked questions about TNBC",
+      "content": "Q: Is TNBC always aggressive? A: Not always \u2014 early-stage TNBC that responds to chemotherapy has good outcomes. Q: Can TNBC be cured? A: Early-stage TNBC is potentially curable, especially with pCR. Metastatic TNBC is managed rather than cured in most cases. Q: Does TNBC run in families? A: It can, particularly if linked to BRCA1/2 mutations. Genetic counselling is recommended. Q: Why can't TNBC be treated with hormone therapy? A: Hormone therapies target ER/PR receptors. Since TNBC lacks these receptors, those drugs have no target to act on. Q: Is TNBC the same as basal-like breast cancer? A: There is significant overlap, but they are not identical \u2014 approximately 80% of TNBC is basal-like, but not all basal-like tumours are triple-negative."
+    },
+    {
+      "id": "tnbc_009",
+      "category": "general_tnbc",
+      "tags": [
+        "TNBC",
+        "immunotherapy",
+        "PD-L1",
+        "checkpoint inhibitor"
+      ],
+      "title": "Immunotherapy in TNBC",
+      "content": "TNBC has higher tumour mutational burden and greater immune infiltration than other breast cancer subtypes, making it more amenable to immunotherapy. Pembrolizumab (Keytruda) is FDA-approved in combination with chemotherapy for locally advanced or metastatic PD-L1-positive TNBC, and also as adjuvant therapy for early high-risk TNBC. Atezolizumab was previously approved but has been withdrawn from the US market. PD-L1 testing is required before initiating pembrolizumab in metastatic settings. Research into other checkpoint inhibitors and combination approaches is ongoing."
+    },
+    {
+      "id": "tnbc_010",
+      "category": "general_tnbc",
+      "tags": [
+        "pCR",
+        "pathologic complete response",
+        "neoadjuvant",
+        "chemo response"
+      ],
+      "title": "What is pathologic complete response (pCR) in TNBC?",
+      "content": "Pathologic complete response (pCR) refers to the absence of residual invasive cancer in the breast and lymph nodes after completing neoadjuvant (pre-surgery) chemotherapy. In TNBC, achieving pCR is a strong predictor of improved event-free survival and overall survival. The pCR rate in TNBC with standard neoadjuvant chemotherapy ranges from approximately 30\u201350%, higher than in many other breast cancer subtypes. BL1 TNBC tends to have the highest pCR rates. Patients who do not achieve pCR may receive adjuvant capecitabine or pembrolizumab depending on their profile."
+    },
+    {
+      "id": "model_001",
+      "category": "model_transparency",
+      "tags": [
+        "XGBoost",
+        "model",
+        "algorithm",
+        "machine learning"
+      ],
+      "title": "What model does LumiTNBC use?",
+      "content": "LumiTNBC uses XGBoost (Extreme Gradient Boosting), a powerful and widely-used ensemble machine learning algorithm based on decision trees. XGBoost works by building many decision trees sequentially, with each tree correcting the errors of the previous one. It is known for high predictive accuracy, efficient computation, and robustness to missing data \u2014 all important qualities for clinical genomic data, which can be noisy and incomplete. XGBoost also works naturally with TreeSHAP for fast, exact explainability."
+    },
+    {
+      "id": "model_002",
+      "category": "model_transparency",
+      "tags": [
+        "METABRIC",
+        "dataset",
+        "training data"
+      ],
+      "title": "What is the METABRIC dataset?",
+      "content": "METABRIC (Molecular Taxonomy of Breast Cancer International Consortium) is a landmark breast cancer genomics dataset containing molecular and clinical data from approximately 2,000 breast cancer patients from the UK and Canada. It includes gene expression profiles, copy number alterations, and clinical outcomes. METABRIC is one of the most commonly used datasets in breast cancer research. LumiTNBC used METABRIC to train and validate the TNBC subtype classification model, filtering for triple-negative cases."
+    },
+    {
+      "id": "model_003",
+      "category": "model_transparency",
+      "tags": [
+        "TCGA-BRCA",
+        "dataset",
+        "training data",
+        "TCGA"
+      ],
+      "title": "What is the TCGA-BRCA dataset?",
+      "content": "TCGA-BRCA is the breast cancer cohort from The Cancer Genome Atlas (TCGA), a large-scale cancer genomics program funded by the US National Institutes of Health (NIH). It includes RNA sequencing, DNA methylation, copy number variation, and clinical data from over 1,000 breast cancer patients. TCGA-BRCA is publicly available via the GDC Data Portal. LumiTNBC used TCGA-BRCA alongside METABRIC to improve the model's generalisability across different patient populations and data collection protocols."
+    },
+    {
+      "id": "model_004",
+      "category": "model_transparency",
+      "tags": [
+        "accuracy",
+        "model performance",
+        "F1",
+        "precision",
+        "recall",
+        "metrics"
+      ],
+      "title": "LumiTNBC model accuracy and performance",
+      "content": "LumiTNBC's XGBoost classifier achieves approximately 90\u201391.5% overall accuracy on the TNBC subtype classification task across METABRIC and TCGA-BRCA data. Performance is evaluated using accuracy, precision, recall, F1-score, and AUC-ROC per subtype. Classification accuracy above 90% is considered strong for multi-class molecular subtype classification, particularly given inter-dataset variability. Performance may vary by subtype \u2014 some subtypes tend to be classified with higher confidence than others."
+    },
+    {
+      "id": "model_005",
+      "category": "model_transparency",
+      "tags": [
+        "hyperparameter",
+        "tuning",
+        "Optuna",
+        "training"
+      ],
+      "title": "How was LumiTNBC's model trained?",
+      "content": "LumiTNBC's XGBoost model was trained using a pipeline that includes data preprocessing (normalisation, missing value handling), feature selection, and hyperparameter optimisation using Optuna \u2014 an automated hyperparameter tuning framework. Optuna uses a Tree-structured Parzen Estimator (TPE) to efficiently search the hyperparameter space. Cross-validation was used to ensure the model generalises well and is not overfitted to the training data."
+    },
+    {
+      "id": "model_006",
+      "category": "model_transparency",
+      "tags": [
+        "limitations",
+        "bias",
+        "generalisability",
+        "caution"
+      ],
+      "title": "Model limitations and known cautions",
+      "content": "LumiTNBC's model has several limitations to be aware of: (1) Training data is predominantly from Western (UK, US) patient populations \u2014 performance in other ethnic or geographic groups may vary. (2) The model requires gene expression input; it is not validated for use with raw clinical features alone. (3) Missing feature values may affect prediction confidence. (4) Subtype classifications are probabilistic \u2014 the model provides the most likely subtype but cannot guarantee correctness. (5) The system has not undergone clinical trial validation or regulatory approval as a medical device."
+    },
+    {
+      "id": "model_007",
+      "category": "model_transparency",
+      "tags": [
+        "Lehmann",
+        "subtype labelling",
+        "reference",
+        "ground truth"
+      ],
+      "title": "How were subtype labels determined?",
+      "content": "TNBC subtype labels used in training LumiTNBC are based on the Lehmann et al. (2011, 2016) classification framework, which defined TNBC subtypes through clustering of gene expression data. The original 2011 work identified six subtypes (BL1, BL2, M, MSL, IM, LAR); the refined 2016 analysis showed several of these consolidate, and LumiTNBC uses a four-subtype scheme of BL1, BL2, LAR, and M. Subtype assignment for training samples was derived from established gene-expression-based reference classification."
+    },
+    {
+      "id": "model_008",
+      "category": "model_transparency",
+      "tags": [
+        "open source",
+        "reproducibility",
+        "code",
+        "pipeline"
+      ],
+      "title": "Is LumiTNBC reproducible?",
+      "content": "LumiTNBC was developed with reproducibility in mind. The full ML pipeline is structured across Jupyter notebooks covering data preprocessing, exploratory data analysis (EDA), feature engineering, model training, and explainability analysis. The pipeline uses publicly available datasets (METABRIC via cBioPortal, TCGA-BRCA via GDC Data Portal) and open-source Python libraries including scikit-learn, XGBoost, SHAP, LIME, and Optuna. Random seeds are set for reproducibility of results."
+    },
+    {
+      "id": "faq_001",
+      "category": "faq",
+      "tags": [
+        "chatbot",
+        "what can you do",
+        "capabilities"
+      ],
+      "title": "What can the LumiTNBC chatbot help with?",
+      "content": "The LumiTNBC chatbot can help you with: understanding the LumiTNBC system and how to use it; interpreting your prediction results (subtype, confidence score, SHAP/LIME explanations); learning about TNBC molecular subtypes and their clinical characteristics; understanding general TNBC medical information; and learning about the datasets and model behind LumiTNBC. The chatbot cannot provide personalised medical advice, diagnose patients, or replace clinical consultation."
+    },
+    {
+      "id": "faq_002",
+      "category": "faq",
+      "tags": [
+        "confidence score",
+        "low confidence",
+        "what to do"
+      ],
+      "title": "My prediction confidence score is low \u2014 what does that mean?",
+      "content": "A low confidence score (below 60%) means the model is uncertain about which subtype the patient belongs to. This can happen when: (1) the patient's gene expression profile is atypical or does not strongly resemble any one subtype; (2) there are missing or poor-quality input features; (3) the case may fall at the boundary between two subtypes. In such cases, the SHAP and LIME explanations can still be informative, but the predicted subtype label should be interpreted with extra caution by a clinical expert."
+    },
+    {
+      "id": "faq_003",
+      "category": "faq",
+      "tags": [
+        "subtype change",
+        "different result",
+        "re-run"
+      ],
+      "title": "Can a patient's subtype classification change?",
+      "content": "Yes. TNBC subtype classifications can change in several scenarios: (1) if new or corrected gene expression data is entered; (2) if the tumour sample changes over time (e.g., due to treatment pressure causing clonal selection); (3) if different bioinformatic preprocessing is applied to the input data. Subtype is a molecular snapshot \u2014 it reflects the tumour's gene expression profile at the time of the sample. Re-running LumiTNBC with updated data will produce a new prediction based on that updated input."
+    },
+    {
+      "id": "faq_004",
+      "category": "faq",
+      "tags": [
+        "treatment decision",
+        "clinical use",
+        "how to use results"
+      ],
+      "title": "Can I use LumiTNBC results to make treatment decisions?",
+      "content": "LumiTNBC results should be used as supplementary information to support, not drive, treatment decisions. The subtype prediction can inform discussions about likely chemotherapy sensitivity, potential targeted therapy options, and prognosis \u2014 but all decisions must be made by a qualified oncologist considering the full clinical picture, including tumour stage, patient health, pathology, and available treatment options. LumiTNBC has not been approved as a clinical diagnostic device."
+    },
+    {
+      "id": "faq_005",
+      "category": "faq",
+      "tags": [
+        "data privacy",
+        "patient data",
+        "security"
+      ],
+      "title": "Is patient data safe when using LumiTNBC?",
+      "content": "LumiTNBC processes gene expression data entered into the system. Users should ensure that any patient data entered complies with applicable data protection regulations (e.g., PDPA in Malaysia, GDPR in Europe, HIPAA in the US). The system is intended for use within a secure clinical or research environment. Users are responsible for ensuring that patient identifiers are handled appropriately and that de-identification is applied where required."
+    },
+    {
+      "id": "faq_006",
+      "category": "faq",
+      "tags": [
+        "error",
+        "unexpected result",
+        "wrong prediction"
+      ],
+      "title": "What if the subtype prediction seems wrong?",
+      "content": "If a prediction seems inconsistent with clinical findings, consider: (1) reviewing the input data for errors or missing values; (2) checking if the gene expression data has been normalised correctly; (3) reviewing the SHAP explanation to see which features drove the prediction; (4) comparing against LIME output for consistency. If both explainability methods highlight unexpected features, data quality should be investigated. Model misclassifications can occur, especially in borderline cases \u2014 this is why expert clinical review is always required."
+    },
+    {
+      "id": "faq_007",
+      "category": "faq",
+      "tags": [
+        "gene expression",
+        "RNA",
+        "input data format",
+        "data preparation"
+      ],
+      "title": "What format should gene expression data be in?",
+      "content": "LumiTNBC expects gene expression values that have been preprocessed and normalised (e.g., log2-transformed FPKM, TPM, or normalised microarray intensities), consistent with the preprocessing applied to METABRIC and TCGA-BRCA training data. Raw read counts should be normalised before input. Ensure that gene identifiers match those used in the training features. Consult the system documentation or contact the development team if you are unsure about the expected input format for your specific data source."
+    },
+    {
+      "id": "glossary_001",
+      "category": "glossary",
+      "tags": [
+        "glossary",
+        "terms",
+        "definitions",
+        "ER",
+        "PR",
+        "HER2"
+      ],
+      "title": "Glossary: ER, PR, HER2",
+      "content": "ER (Oestrogen Receptor): A protein on breast cancer cells that binds oestrogen; ER+ cancers are driven by oestrogen and respond to hormone therapies. PR (Progesterone Receptor): Similar to ER; PR+ cancers respond to progesterone-blocking therapies. HER2 (Human Epidermal growth factor Receptor 2): A protein that promotes cell growth; HER2+ cancers respond to targeted therapies like trastuzumab. TNBC is negative for all three (ER\u2212, PR\u2212, HER2\u2212)."
+    },
+    {
+      "id": "glossary_002",
+      "category": "glossary",
+      "tags": [
+        "glossary",
+        "pCR",
+        "neoadjuvant",
+        "adjuvant"
+      ],
+      "title": "Glossary: pCR, neoadjuvant, adjuvant",
+      "content": "pCR (Pathologic Complete Response): No residual invasive cancer found in breast/lymph nodes after neoadjuvant treatment. Neoadjuvant therapy: Treatment given before surgery (to shrink the tumour). Adjuvant therapy: Treatment given after surgery (to eliminate residual disease and reduce recurrence risk). In TNBC, neoadjuvant chemotherapy followed by surgery is a common approach; adjuvant immunotherapy or chemotherapy may follow based on pCR status."
+    },
+    {
+      "id": "glossary_003",
+      "category": "glossary",
+      "tags": [
+        "glossary",
+        "EMT",
+        "metastasis",
+        "invasion"
+      ],
+      "title": "Glossary: EMT and metastasis",
+      "content": "EMT (Epithelial-to-Mesenchymal Transition): A biological process where cancer cells lose their epithelial (cell-to-cell adhesion) properties and gain mesenchymal (migratory, invasive) properties, enabling metastasis. EMT is a hallmark of the M and LAR TNBC subtypes. Metastasis: The spread of cancer from the primary tumour to distant organs (e.g., lungs, liver, brain, bone). TNBC has a higher propensity for early distant metastasis compared to ER+ breast cancers."
+    },
+    {
+      "id": "glossary_004",
+      "category": "glossary",
+      "tags": [
+        "glossary",
+        "SHAP",
+        "LIME",
+        "XGBoost",
+        "RAG",
+        "AI terms"
+      ],
+      "title": "Glossary: AI and model terms",
+      "content": "XGBoost: An ensemble machine learning algorithm based on gradient boosting of decision trees. SHAP (SHapley Additive exPlanations): A method to explain ML model predictions using Shapley values from game theory. LIME (Local Interpretable Model-agnostic Explanations): A technique that explains individual predictions by fitting a local linear model. RAG (Retrieval-Augmented Generation): An AI technique where a chatbot retrieves relevant knowledge from a database before generating a response, improving accuracy and groundedness. Confidence score: The model's estimated probability that its prediction is correct."
+    },
+    {
+      "id": "glossary_005",
+      "category": "glossary",
+      "tags": [
+        "glossary",
+        "BRCA",
+        "PARP",
+        "inhibitor",
+        "targeted therapy"
+      ],
+      "title": "Glossary: BRCA, PARP inhibitors",
+      "content": "BRCA1/BRCA2: Tumour suppressor genes involved in DNA double-strand break repair via homologous recombination. Mutations cause genomic instability and are strongly associated with TNBC (especially BRCA1). PARP inhibitors: A class of targeted drugs (e.g., olaparib, talazoparib) that block PARP enzymes involved in DNA repair. In BRCA-mutated cancers, PARP inhibition leads to lethal DNA damage through a mechanism called synthetic lethality. PARP inhibitors are approved for BRCA1/2-mutated metastatic breast cancer."
+    }
+  ]
+}

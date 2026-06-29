@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}LumiTNBC: Understanding Your TNBC Journey with Clarity{% endblock %}
+{% block body %}
+<div style="position:fixed;top:18px;right:18px;z-index:100;">
+  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+  </button>
+</div>
+<div style="background:linear-gradient(180deg, var(--lumi-blush) 0%, var(--lumi-background) 55%); min-height:100vh; padding:var(--sp-16) var(--sp-6) var(--sp-16);">
+  <div style="text-align:center; max-width:760px; margin:0 auto;">
+
+    <img class="hero-logo" src="{{ url_for('static', filename='images/lumiTNBC-logo.png') }}" alt="LumiTNBC"
+         style="width:300px; max-width:80%; height:auto; display:block; margin:0 auto var(--sp-6);">
+
+    <h1 class="animate-in" style="--delay:0.05s; font-size:38px; font-weight:700; line-height:1.12; letter-spacing:-0.6px; margin-bottom:var(--sp-4); color:var(--lumi-navy);">
+      Understanding Your TNBC Journey with Clarity
+    </h1>
+
+    <p class="animate-in" style="--delay:0.15s; font-size:17px; line-height:1.55; color:var(--lumi-slate); max-width:600px; margin:0 auto var(--sp-6);">
+      LumiTNBC uses advanced AI to identify your Triple-Negative Breast Cancer molecular subtype and connect you with relevant clinical trials, with explanations you can understand.
+    </p>
+
+    <div class="animate-in" style="--delay:0.25s; display:flex; gap:var(--sp-3); justify-content:center; flex-wrap:wrap; margin-bottom:var(--sp-3);">
+      {% if session.get('user_id') %}
+      <a href="{{ url_for('classification') }}" class="btn btn-primary btn-lg">Start Analysis</a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-lg">My Dashboard</a>
+      {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Get Started</a>
+      <a href="{{ url_for('classification') }}" class="btn btn-outline btn-lg">Start Analysis</a>
+      {% endif %}
+    </div>
+    {% if not session.get('user_id') %}
+    <p class="animate-in" style="--delay:0.3s; font-size:13px; color:var(--lumi-muted); margin-bottom:var(--sp-12);">
+      Get Started to create an account, or jump straight in with Start Analysis (no sign-up needed).
+    </p>
+    {% else %}
+    <div style="margin-bottom:var(--sp-12);"></div>
+    {% endif %}
+
+    <div class="grid grid-3" style="gap:var(--sp-4); text-align:left;">
+
+      <div class="feature-card reveal" style="--delay:0s;">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+        <h3>Identify Your TNBC Subtype</h3>
+        <p>Accurate molecular classification using machine learning analysis of your genomic data.</p>
+      </div>
+
+      <div class="feature-card reveal" style="--delay:0.12s;">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-4 12.7c.5.4.8 1 .9 1.6h6.2c.1-.6.4-1.2.9-1.6A7 7 0 0 0 12 2z"></path></svg>
+        </div>
+        <h3>Understand the Results</h3>
+        <p>Clear explanations of how your subtype was determined and what it means for your care.</p>
+      </div>
+
+      <div class="feature-card reveal" style="--delay:0.24s;">
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+        </div>
+        <h3>Find Relevant Trials</h3>
+        <p>Personalised clinical trial recommendations based on your specific TNBC molecular profile.</p>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}

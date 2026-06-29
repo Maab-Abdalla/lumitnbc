@@ -1,0 +1,14 @@
+0
+clin_age
+clin_stage
+clin_grade
+clin_tumor_size
+clin_node_status
+clin_tmb
+clin_menopausal
+clin_cellularity
+clin_hist_ductal
+clin_hist_lobular
+clin_hist_metaplastic
+clin_hist_medullary
+clin_hist_other

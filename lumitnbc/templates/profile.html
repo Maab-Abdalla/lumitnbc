@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% set active_page = 'profile' %}
+{% block title %}Profile | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+{% set is_patient = (user.get('role') == 'patient') %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container container--tight">
+    <h1 style="margin-bottom:var(--sp-8);">My Profile</h1>
+
+    <div id="profile-msg" style="display:none;padding:var(--sp-3);border-radius:var(--r-input);margin-bottom:var(--sp-4);font-size:13px;"></div>
+
+    <div class="grid grid-2 mb-6">
+      <!-- Personal information (editable) -->
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Personal Information</h2></div>
+        <div class="card-body">
+          <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="pf-name" class="form-input" value="{{ user.get('name','') }}"></div>
+          <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" value="{{ user.get('email','') }}" disabled style="background:var(--lumi-background);"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="pf-phone" class="form-input" value="{{ user.get('phone') or '' }}"></div>
+          <button onclick="updateInfo()" class="btn btn-primary btn-block">Update Information</button>
+        </div>
+      </div>
+
+      {% if is_patient %}
+      <!-- Medical information (patients only) -->
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Medical Information</h2></div>
+        <div class="card-body">
+          {% for label, value in [
+            ('Diagnosis Date', user.get('diagnosis_date','Not specified')),
+            ('Cancer Type', user.get('cancer_type','TNBC')),
+            ('Stage', user.get('cancer_stage','Not specified')),
+          ] %}
+          <div style="margin-bottom:var(--sp-5);">
+            <p style="font-size:11px;color:var(--lumi-muted);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;margin-bottom:4px;">{{ label }}</p>
+            <p style="font-weight:500;margin-bottom:0;">{{ value }}</p>
+          </div>
+          {% endfor %}
+          <div>
+            <p style="font-size:11px;color:var(--lumi-muted);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;margin-bottom:4px;">Latest Subtype</p>
+            <p style="font-weight:600;color:var(--lumi-pink);margin-bottom:0;">{% if analyses %}{{ analyses[0].get('subtype','-') }}{% else %}-{% endif %}</p>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <!-- Change password (providers/admins) -->
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Change Password</h2></div>
+        <div class="card-body">
+          <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="pf-cur" class="form-input" placeholder="Current password"></div>
+          <div class="form-group"><label class="form-label">New Password</label><input type="password" id="pf-new" class="form-input" placeholder="At least 8 characters"></div>
+          <button onclick="updatePassword()" class="btn btn-primary btn-block">Update Password</button>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Activity History -->
+    {% if is_patient %}
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 class="card-title mb-0">Analysis History</h2>
+          <span class="badge badge-primary">{{ analyses|length }} Analyses</span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if analyses %}
+        <div class="table-container">
+          <table class="table">
+            <thead><tr><th>Analysis ID</th><th>Date</th><th>Method</th><th>Subtype</th><th>Confidence</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for a in analyses %}
+              <tr>
+                <td style="font-weight:500;">{{ a.analysis_id }}</td>
+                <td>{{ a.timestamp[:10] if a.timestamp else '' }}</td>
+                <td><span class="badge badge-{% if a.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}">{{ 'ML' if a.method in ['xgboost_ml','hybrid_ml'] else 'Clinical' }}</span></td>
+                <td><span style="color:var(--lumi-pink);font-weight:600;">{{ a.subtype }}</span></td>
+                <td>{{ a.confidence }}%</td>
+                <td><a href="{{ url_for('results', analysis_id=a.analysis_id) }}" style="font-weight:500;">View →</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p style="text-align:center;color:var(--lumi-slate);padding:var(--sp-6);">No analyses yet. <a href="{{ url_for('classification') }}">Start your first analysis</a>.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <!-- Provider/admin review activity -->
+    <div class="card">
+      <div class="card-header"><h2 class="card-title mb-0">Review Activity</h2></div>
+      <div class="card-body" style="text-align:center;padding:var(--sp-8);">
+        <div style="font-size:36px;font-weight:700;color:var(--lumi-pink);">{{ reviews_done }}</div>
+        <p style="font-size:14px;color:var(--lumi-slate);margin-top:var(--sp-2);margin-bottom:var(--sp-4);">patient reviews you have completed</p>
+        <a href="{{ url_for('provider_dashboard') }}" class="btn btn-outline btn-sm">Go to Review Queue</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+
+<script>
+function showMsg(text, ok) { showToast(text, ok ? 'success' : 'error'); }
+async function patchProfile(payload) {
+  const r = await fetch('/api/profile', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+  return r.json();
+}
+async function updateInfo() {
+  const d = await patchProfile({name: document.getElementById('pf-name').value, phone: document.getElementById('pf-phone').value});
+  if (d.success) { showToast('Profile updated.', 'success'); setTimeout(()=>location.reload(), 900); }
+  else showToast(d.message || 'Update failed.', 'error');
+}
+async function updatePassword() {
+  const cur = document.getElementById('pf-cur').value, nw = document.getElementById('pf-new').value;
+  if (nw.length < 8) { showToast('New password must be at least 8 characters.', 'error'); return; }
+  const d = await patchProfile({current_password: cur, new_password: nw});
+  if (d.success) { showToast('Password updated.', 'success'); document.getElementById('pf-cur').value=''; document.getElementById('pf-new').value=''; }
+  else showToast(d.message || 'Password update failed.', 'error');
+}
+</script>
+{% endblock %}

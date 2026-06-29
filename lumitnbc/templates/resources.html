@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set active_page = 'resources' %}
+{% block title %}Resources | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+{% macro thumb(kind, color) %}
+<div style="height:120px;border-radius:var(--r-input) var(--r-input) 0 0;background:linear-gradient(135deg, {{ color }}22, {{ color }}0d);display:flex;align-items:center;justify-content:center;">
+  {% if kind == 'book' %}
+  <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="{{ color }}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+  {% elif kind == 'community' %}
+  <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="{{ color }}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+  {% else %}
+  <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="{{ color }}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+  {% endif %}
+</div>
+{% endmacro %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container">
+
+    <h1 style="margin-bottom:var(--sp-2);">Resources &amp; Support</h1>
+    <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-8);max-width:640px;">
+      Trusted information from established cancer organisations. These resources are educational and do not replace advice from your care team.
+    </p>
+
+    {% if resource_videos %}
+    <div class="reveal" style="margin-bottom:var(--sp-8);">
+      <h2 style="font-size:18px;margin-bottom:var(--sp-4);">Videos</h2>
+      <div class="hscroll">
+        {% for v in resource_videos %}
+        <a href="{{ youtube_watch_url(v.id) }}" target="_blank" rel="noopener noreferrer" class="resource-card video-card">
+          <div class="video-thumb">
+            <img src="{{ youtube_thumb(v.id) }}" alt="{{ v.title }}" loading="lazy">
+            <span class="video-play" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"></path></svg>
+            </span>
+          </div>
+          <div style="padding:var(--sp-4);">
+            {% if v.source %}<div style="font-size:12px;color:var(--lumi-pink);font-weight:600;margin-bottom:4px;">{{ v.source }}</div>{% endif %}
+            <div style="font-weight:600;font-size:15px;color:var(--lumi-navy);margin-bottom:6px;line-height:1.3;">{{ v.title }}</div>
+            {% if v.desc %}<div style="font-size:13px;color:var(--lumi-slate);line-height:1.5;">{{ v.desc }}</div>{% endif %}
+            <div style="margin-top:var(--sp-3);font-size:12px;color:var(--lumi-pink);font-weight:600;display:flex;align-items:center;gap:5px;">
+              Watch on YouTube
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% set cat_colors = {'Understanding TNBC':'var(--lumi-pink)', 'Support & Community':'var(--lumi-blue)'} %}
+    {% for group in resource_links %}
+    {% set gc = cat_colors.get(group.category, 'var(--lumi-pink)') %}
+    <div class="reveal" style="margin-bottom:var(--sp-8);">
+      <h2 style="font-size:18px;margin-bottom:var(--sp-4);">{{ group.category }}</h2>
+
+      <div class="hscroll">
+        {% for item in group['items'] %}
+        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" class="resource-card">
+          {{ thumb(group.get('icon','info'), gc) }}
+          <div style="padding:var(--sp-4);">
+            <div style="font-size:12px;color:{{ gc }};font-weight:600;margin-bottom:4px;">{{ item.org }}</div>
+            <div style="font-weight:600;font-size:15px;color:var(--lumi-navy);margin-bottom:6px;line-height:1.3;">{{ item.title }}</div>
+            <div style="font-size:13px;color:var(--lumi-slate);line-height:1.5;">{{ item.desc }}</div>
+            <div style="margin-top:var(--sp-3);font-size:12px;color:{{ gc }};font-weight:600;display:flex;align-items:center;gap:5px;">
+              Visit site
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="card mb-6 reveal">
+      <div class="card-header"><h2 class="card-title mb-0">Frequently asked questions</h2></div>
+      <div class="card-body">
+        {% for f in general_faqs %}
+        <div style="margin-bottom:var(--sp-5);{% if not loop.last %}padding-bottom:var(--sp-5);border-bottom:1px solid rgba(196,110,156,0.1);{% endif %}">
+          <h3 style="font-size:15px;margin-bottom:var(--sp-2);color:var(--lumi-navy);">{{ f.q }}</h3>
+          <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin:0;">{{ f.a }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="info-panel" style="font-size:13px;">
+      The organisations linked here are independent; LumiTNBC is not affiliated with them and is not responsible for their content. Always discuss your care with a qualified healthcare professional.
+    </div>
+
+  </div>
+</main>
+{% endblock %}

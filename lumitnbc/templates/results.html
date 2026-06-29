@@ -1,0 +1,792 @@
+{% extends "base.html" %}
+{% set active_page = 'results' %}
+{% block title %}Results | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container">
+
+    {% if result %}
+    {% set info = subtype_info.get(result.subtype, {}) %}
+    {% set is_patient = (user.get('role') == 'patient') %}
+    {% set is_guest = user.get('is_guest', False) %}
+    {% set scolor = info.get('color', 'var(--lumi-pink)') %}
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-8);flex-wrap:wrap;gap:var(--sp-4);">
+      <div>
+        <h1 style="margin-bottom:var(--sp-2);">{% if is_patient %}Your Results{% else %}Analysis Results{% endif %}</h1>
+        <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:0;">
+          {{ analysis_id }} · {{ result.timestamp[:10] if result.timestamp else '' }}
+          · <span style="color:{% if result.method in ['xgboost_ml','hybrid_ml'] %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};font-weight:500;">
+            {{ 'AI Model (XGBoost)' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Rule-Based' }}
+          </span>
+        </p>
+      </div>
+      <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
+        <button onclick="window.print()" class="btn btn-outline btn-sm">Print Report</button>
+        <a href="{{ url_for('classification') }}" class="btn btn-outline btn-sm">New Analysis</a>
+      </div>
+    </div>
+
+    <!-- Result Banner -->
+    <div class="result-banner" style="border-color:{{ scolor }};">
+      <p class="result-banner-eyebrow">
+        {% if is_patient %}Your TNBC Subtype{% else %}Predicted Molecular Subtype{% endif %}
+      </p>
+      <h1 style="font-size:42px;font-weight:700;line-height:1.10;letter-spacing:-0.84px;color:{{ scolor }};margin-bottom:var(--sp-2);">
+        {{ info.get('full_name', result.subtype) }} ({{ result.subtype }})
+      </h1>
+      <p class="result-banner-sub">Triple-Negative Breast Cancer Molecular Subtype</p>
+      <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;">
+        <span class="badge badge-success" style="padding:8px 20px;font-size:14px;">Confidence: {{ result.confidence }}%</span>
+        <span class="badge badge-{% if result.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}" style="padding:8px 20px;font-size:14px;">{{ 'AI Classification' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Approximation' }}</span>
+      </div>
+      {% if result.method == 'clinical_rules' %}
+      <p style="margin-top:var(--sp-4);font-size:13px;color:var(--lumi-slate);max-width:550px;margin-left:auto;margin-right:auto;">
+        {{ result.method_note }}. For a more accurate AI classification, upload gene expression data.
+      </p>
+      {% endif %}
+    </div>
+
+    {# ============================================================= #}
+    {# ====================  PATIENT VIEW  ========================= #}
+    {# ============================================================= #}
+    {% if is_patient %}
+
+    {% set conf = result.confidence|float %}
+
+    <div class="result-content">
+
+      <!-- Style C: icon-segment tab bar (panels switch, no scrolling) -->
+      <div class="result-tabbar" role="tablist">
+        <button class="result-tab active" data-panel="overview" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>Overview</span>
+        </button>
+        <button class="result-tab" data-panel="charts" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+          <span>Charts</span>
+        </button>
+        <button class="result-tab" data-panel="factors" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          <span>Factors</span>
+        </button>
+        <button class="result-tab" data-panel="trials" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6l-4 8a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-4-8V2"></path><line x1="8" y1="2" x2="16" y2="2"></line></svg>
+          <span>Trials</span>
+        </button>
+        <button class="result-tab" data-panel="review" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"></path><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"></path><circle cx="20" cy="10" r="2"></circle></svg>
+          <span>Review</span>
+        </button>
+      </div>
+
+      <!-- ===== Overview ===== -->
+      <section id="sec-overview" class="result-section active" data-panel="overview">
+      <div class="card" style="margin-bottom:var(--sp-6);border-top:4px solid {{ scolor }};">
+        <div class="card-body" style="padding:var(--sp-8);">
+          <h2 style="margin-bottom:var(--sp-3);">What this means for you</h2>
+          <p style="font-size:16px;line-height:1.7;color:var(--lumi-navy);margin-bottom:var(--sp-5);">{{ info.get('patient_summary', info.description) }}</p>
+          {% if info.description and info.description != info.get('patient_summary') %}
+          <p style="font-size:15px;line-height:1.7;color:var(--lumi-slate);margin-bottom:var(--sp-5);">{{ info.description }}</p>
+          {% endif %}
+
+          <div style="display:flex;gap:var(--sp-4);flex-wrap:wrap;">
+            <div style="flex:1;min-width:260px;background:var(--lumi-blush-half);border-radius:var(--r-input);padding:var(--sp-5);">
+              <p style="font-size:12px;text-transform:uppercase;font-weight:600;color:{{ scolor }};letter-spacing:0.5px;margin-bottom:var(--sp-2);">Why it matters</p>
+              <p style="font-size:14px;line-height:1.6;color:var(--lumi-slate);margin:0;">{{ info.get('patient_meaning', '') }}</p>
+            </div>
+            {% if info.get('patient_good_news') %}
+            <div style="flex:1;min-width:260px;background:rgba(0,168,126,0.07);border-radius:var(--r-input);padding:var(--sp-5);">
+              <p style="font-size:12px;text-transform:uppercase;font-weight:600;color:var(--lumi-success);letter-spacing:0.5px;margin-bottom:var(--sp-2);">Encouraging to know</p>
+              <p style="font-size:14px;line-height:1.6;color:var(--lumi-slate);margin:0;">{{ info.get('patient_good_news') }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Your Personal Summary (LLM layer; only renders when enabled server-side) -->
+      {% if llm_summary_enabled %}
+      <div id="personalSummaryCard" class="card" style="margin-bottom:var(--sp-6);border-left:4px solid var(--lumi-pink);display:none;">
+        <div class="card-header"><h2 class="card-title mb-0">Your Personal Summary</h2></div>
+        <div class="card-body">
+          <div id="summaryLoading" style="color:var(--lumi-slate);font-size:14px;">Preparing a summary tailored to your result…</div>
+          <p id="summaryText" style="font-size:16px;line-height:1.7;color:var(--lumi-navy);margin:0;display:none;"></p>
+          <p style="font-size:12px;color:var(--lumi-muted);margin:var(--sp-3) 0 0;">AI-generated summary based on your result. Always confirm with your care team.</p>
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ===== Charts ===== -->
+    <section id="sec-charts" class="result-section" data-panel="charts">
+      <div class="grid grid-2" style="margin-bottom:var(--sp-6);">
+        <!-- Confidence donut -->
+        {% if result.probabilities %}
+        <div class="card">
+          <div class="card-header"><h2 class="card-title mb-0">How sure is the model?</h2></div>
+          <div class="card-body" style="text-align:center;">
+            <div style="position:relative;width:240px;height:240px;margin:0 auto;">
+              <canvas id="confidenceDonut"></canvas>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;">
+                <div style="font-size:34px;font-weight:700;color:{{ scolor }};line-height:1;">{{ result.confidence }}%</div>
+                <div style="font-size:12px;color:var(--lumi-slate);">{{ result.subtype }}</div>
+              </div>
+            </div>
+            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;max-width:320px;margin:var(--sp-4) auto 0;">
+              {% if conf >= 85 %}
+                The AI is highly confident your tumour is the {{ result.subtype }} subtype. The other subtypes were considered but scored much lower.
+              {% elif conf >= 65 %}
+                The AI is reasonably confident in this result. Your care team can confirm with additional tests if needed.
+              {% else %}
+                This result is less certain, as the subtypes scored closely. Your care team may recommend further testing to confirm.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- What pushed the decision -->
+        {% if patient_shap_chart %}
+        <div class="card">
+          <div class="card-header"><h2 class="card-title mb-0">What pushed the decision</h2></div>
+          <div class="card-body">
+            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">These are the signals that most strongly pointed toward {{ result.subtype }}.</p>
+            <canvas id="shapBar" height="220"></canvas>
+            <div style="display:flex;gap:var(--sp-4);justify-content:center;margin-top:var(--sp-4);font-size:12px;color:var(--lumi-slate);">
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--lumi-pink);margin-right:5px;"></span>Supports {{ result.subtype }}</span>
+              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--lumi-blue);margin-right:5px;"></span>Points away</span>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- How your tumour compares (full width, below) -->
+      {% if result.probabilities %}
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">How your tumour compares</h2></div>
+        <div class="card-body">
+          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">The model weighed all four TNBC subtypes. Here is how likely each one is for your tumour.</p>
+          {% for sub, prob in result.probabilities.items() %}
+          {% set subcol = subtype_info.get(sub,{}).get('color','var(--lumi-pink)') %}
+          <div style="margin-bottom:var(--sp-4);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;">
+              <span style="font-weight:{% if sub==result.subtype %}700{% else %}500{% endif %};color:{% if sub==result.subtype %}{{ subcol }}{% else %}var(--lumi-navy){% endif %};">
+                {{ subtype_info.get(sub,{}).get('full_name', sub) }}{% if sub==result.subtype %} (your result){% endif %}
+              </span>
+              <span style="font-weight:700;color:{{ subcol }};">{{ prob }}%</span>
+            </div>
+            <div class="progress" style="height:14px;"><div class="progress-bar" style="width:{{ prob }}%;background:{{ subcol }};"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ===== Factors ===== -->
+    <section id="sec-factors" class="result-section" data-panel="factors">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Why the model decided this</h2></div>
+        <div class="card-body">
+          {% if result.method in ['xgboost_ml', 'hybrid_ml'] and patient_reasons %}
+            <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-5);">The chart shows the strongest signals at a glance. Below, each one is explained in plain language with the specific gene involved and how strongly it contributed.</p>
+            {% for r in patient_reasons %}
+              <div style="display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);background:{% if r.supports %}rgba(196,110,156,0.06){% else %}rgba(94,147,190,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
+                <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">{{ loop.index }}</div>
+                <div style="flex:1;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:4px;">
+                    <p style="font-weight:600;font-size:14px;margin:0;">{{ r.label }}
+                      {% if r.gene %}<span style="font-family:var(--font-mono,monospace);font-size:12px;color:var(--lumi-muted);font-weight:500;">· gene {{ r.gene }}</span>{% endif %}
+                    </p>
+                    <span style="font-size:12px;font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};white-space:nowrap;">
+                      {% if r.supports %}+{% else %}−{% endif %}{{ r.magnitude }} contribution
+                    </span>
+                  </div>
+                  <p style="font-size:13px;color:var(--lumi-slate);margin:0;line-height:1.5;">{{ r.sentence }}
+                    <span style="font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">{% if r.supports %}Pointed toward this subtype.{% else %}Pointed slightly away.{% endif %}</span></p>
+                </div>
+              </div>
+            {% endfor %}
+            <div class="info-panel mt-4">
+              The "contribution" value is the SHAP magnitude: how much that gene's activity moved the model's decision. Higher means a stronger influence. Your care team can walk through these findings with you in detail.
+            </div>
+          {% elif result.top_reasons %}
+            <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-4);">Based on your clinical information, here is what pointed to this subtype:</p>
+            {% for r in result.top_reasons %}
+            <div style="padding:var(--sp-3) var(--sp-4);background:var(--lumi-blush-half);border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid var(--lumi-pink);font-size:14px;">{{ r }}</div>
+            {% endfor %}
+            <div class="info-panel mt-4">
+              Clinical-only results are approximate. A gene expression test gives a more accurate classification.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Clinical Trials ===== -->
+    <section id="sec-trials" class="result-section" data-panel="trials">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 class="card-title mb-0">Clinical trials that may fit your subtype</h2>
+            <span class="badge badge-primary">{{ result.trials|length }} matches</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">These research studies are testing treatments for the {{ result.subtype }} subtype. Ask your care team whether any could be right for you.</p>
+          {% for trial in result.trials[:3] %}
+          <div style="border:{% if loop.first %}2px solid {{ scolor }}{% else %}1px solid rgba(196,110,156,0.15){% endif %};border-radius:var(--r-input);padding:var(--sp-5);{% if loop.first %}background:var(--lumi-blush-half);{% endif %}margin-bottom:var(--sp-3);">
+            <p style="font-weight:600;font-size:15px;margin-bottom:var(--sp-3);">{{ trial.title }}</p>
+            <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3);">
+              <span class="badge badge-success">{{ trial.match }}% match</span>
+              <span class="badge badge-primary">{{ trial.status }}</span>
+              <span class="badge badge-info">{{ trial.phase }}</span>
+            </div>
+            <div style="font-size:13px;color:var(--lumi-slate);line-height:1.7;margin-bottom:var(--sp-3);">
+              <div style="display:flex;align-items:flex-start;gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span><strong>Location:</strong> {{ trial.location }}</span>
+              </div>
+              {% if trial.countries %}
+              <div style="display:flex;align-items:flex-start;gap:6px;margin-top:2px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span><strong>Countries:</strong> {{ trial.countries|join(', ') }}</span>
+              </div>
+              {% endif %}
+              <div style="margin-top:2px;"><strong>Reference:</strong> {{ trial.nct }}</div>
+            </div>
+            {% if trial.url %}
+            <a href="{{ trial.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+              View on ClinicalTrials.gov
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-left:4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% if not result.trials %}
+          <div style="text-align:center;padding:var(--sp-8);color:var(--lumi-slate);">No matched trials found.</div>
+          {% endif %}
+          {% if result.trials and result.trials[0].source == 'live' %}
+          <p style="font-size:12px;color:var(--lumi-muted);margin:var(--sp-3) 0 0;">Live results from ClinicalTrials.gov.</p>
+          {% elif result.trials %}
+          <p style="font-size:12px;color:var(--lumi-muted);margin:var(--sp-3) 0 0;">Example trials shown, as live ClinicalTrials.gov data was unavailable.</p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Review My Result (moved to after trials) ===== -->
+    <section id="sec-review" class="result-section" data-panel="review">
+      {% if is_guest %}
+      <div class="card" style="border-left:4px solid var(--lumi-blue);">
+        <div class="card-body" style="padding:var(--sp-6);">
+          <h2 style="margin-bottom:var(--sp-2);font-size:18px;">Want to save this and get a professional review?</h2>
+          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">You are viewing this as a guest, so this result is not saved. Create a free account to keep your results and request a written review from a healthcare provider.</p>
+          <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Create an account</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div id="reviewCard" class="card" style="border-left:4px solid var(--lumi-blue);">
+        <div class="card-body" style="padding:var(--sp-6);">
+          <!-- State A: not yet requested -->
+          <div id="reviewAsk">
+            <h2 style="margin-bottom:var(--sp-2);font-size:18px;">Would you like a healthcare provider to review this?</h2>
+            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">A qualified provider can look over your AI classification and send you written feedback. Your name is never shared; providers see an anonymous patient code only.</p>
+            <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
+              <button onclick="requestReview()" class="btn btn-primary">Yes, request a review</button>
+              <button onclick="declineReview()" class="btn btn-outline">No, thanks</button>
+            </div>
+          </div>
+          <!-- State B: pending -->
+          <div id="reviewPending" style="display:none;">
+            <h2 style="margin-bottom:var(--sp-2);font-size:18px;">Review requested</h2>
+            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:0;">Your results are in the review queue. A healthcare provider will look at them and send feedback here. Check back later, and this page will show their response once it's ready.</p>
+            <span class="badge badge-warning" style="margin-top:var(--sp-3);">Status: Pending review</span>
+          </div>
+          <!-- State C: reviewed -->
+          <div id="reviewDone" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3);flex-wrap:wrap;gap:var(--sp-2);">
+              <h2 style="font-size:18px;margin-bottom:0;">Provider review</h2>
+              <span class="badge badge-success">Reviewed</span>
+            </div>
+            <div id="reviewText" style="padding:var(--sp-4);background:var(--lumi-blush-half);border-radius:var(--r-input);font-size:14px;line-height:1.7;white-space:pre-wrap;color:var(--lumi-navy);"></div>
+            <p id="reviewMeta" style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-3);"></p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <div class="info-panel" style="font-size:13px;margin-top:var(--sp-6);">
+      This tool supports, but does not replace, your medical team. Please discuss these results with your oncologist before making any decisions about your care.
+    </div>
+
+      </div><!-- /.result-content -->
+
+    {% else %}
+    {# ============================================================= #}
+    {# ================  PROVIDER / ADMIN VIEW  ==================== #}
+    {# ============================================================= #}
+
+    <!-- Subtype clinical description -->
+    {% if info.description %}
+    <div style="background:var(--lumi-white);border:1px solid rgba(196,110,156,0.1);border-radius:var(--r-card);padding:var(--sp-6);margin-bottom:var(--sp-6);">
+      <h3 style="margin-bottom:var(--sp-2);">About {{ info.get('full_name', result.subtype) }}</h3>
+      <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin-bottom:var(--sp-4);">{{ info.description }}</p>
+      <div style="display:flex;gap:var(--sp-8);flex-wrap:wrap;">
+        <div><span style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--lumi-muted);letter-spacing:0.5px;">Key Pathways</span><p style="margin-top:4px;font-size:13px;margin-bottom:0;">{{ info.key_pathways }}</p></div>
+        <div><span style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--lumi-muted);letter-spacing:0.5px;">Clinical Relevance</span><p style="margin-top:4px;font-size:13px;margin-bottom:0;">{{ info.clinical_relevance }}</p></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Probabilities -->
+    {% if result.probabilities %}
+    <div style="background:var(--lumi-white);border:1px solid rgba(196,110,156,0.1);border-radius:var(--r-card);padding:var(--sp-6);margin-bottom:var(--sp-6);">
+      <h3 style="margin-bottom:var(--sp-4);">Posterior Probabilities</h3>
+      <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
+        {% for sub, prob in result.probabilities.items() %}
+        <div style="flex:1;min-width:120px;text-align:center;padding:var(--sp-4);background:{% if sub==result.subtype %}var(--lumi-blush){% else %}var(--lumi-background){% endif %};border-radius:var(--r-input);border:2px solid {% if sub==result.subtype %}{{ subtype_info.get(sub,{}).get('color','var(--lumi-pink)') }}{% else %}transparent{% endif %};">
+          <div style="font-size:24px;font-weight:700;color:{{ subtype_info.get(sub,{}).get('color','var(--lumi-navy)') }};">{{ prob }}%</div>
+          <div style="font-size:13px;font-weight:500;color:var(--lumi-slate);">{{ sub }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-2">
+      <!-- SHAP feature importance -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title mb-0">{% if result.method in ['xgboost_ml','hybrid_ml'] %}SHAP Feature Importance{% else %}Clinical Reasoning{% endif %}</h2>
+        </div>
+        <div class="card-body">
+          {% if result.shap_features %}
+            {% set mx = result.shap_features[0].abs_shap if result.shap_features else 1 %}
+            {% for f in result.shap_features[:10] %}
+            <div style="margin-bottom:var(--sp-4);">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-weight:500;font-size:13px;font-family:monospace;">
+                  {{ f.gene }}{% if f.is_clinical %} <span style="font-size:10px;color:var(--lumi-slate);font-family:sans-serif;">[clinical]</span>{% endif %}
+                </span>
+                <span style="font-weight:600;font-size:13px;color:{% if f.shap_value>0 %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
+                  {% if f.shap_value>0 %}+{% endif %}{{ f.shap_value }}
+                  <span style="font-size:11px;color:var(--lumi-slate);font-weight:400;"> (expr: {{ f.expression }})</span>
+                </span>
+              </div>
+              <div class="progress"><div class="progress-bar" style="width:{{ (f.abs_shap/mx*100)|round }}%;background:{% if f.shap_value>0 %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};"></div></div>
+            </div>
+            {% endfor %}
+          {% elif result.top_reasons %}
+            {% for r in result.top_reasons %}
+            <div style="padding:var(--sp-3);background:var(--lumi-background);border-radius:var(--r-input);margin-bottom:var(--sp-2);border-left:3px solid var(--lumi-pink);font-size:13px;">{{ r }}</div>
+            {% endfor %}
+          {% endif %}
+          <div class="info-panel mt-4">
+            {% if result.method in ['xgboost_ml','hybrid_ml'] %}
+              SHAP values indicate each feature's contribution to the <strong>{{ result.subtype }}</strong> prediction. Positive = pushes toward {{ result.subtype }}; negative = pushes away.
+            {% else %}
+              Clinical markers contributing to the {{ result.subtype }} approximation (rule-based, capped at 82% confidence).
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Trials (clinical detail) -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 class="card-title mb-0">Matched Clinical Trials</h2>
+            <span class="badge badge-primary">{{ result.trials|length }} Matches</span>
+          </div>
+        </div>
+        <div class="card-body">
+          {% for trial in result.trials[:3] %}
+          <div style="border:{% if loop.first %}2px solid {{ scolor }}{% else %}1px solid rgba(196,110,156,0.15){% endif %};border-radius:var(--r-input);padding:var(--sp-5);{% if loop.first %}background:var(--lumi-blush-half);{% endif %}margin-bottom:var(--sp-3);">
+            <p style="font-size:13px;font-weight:600;color:{{ scolor }};margin-bottom:var(--sp-1);">{% if trial.url %}<a href="{{ trial.url }}" target="_blank" rel="noopener" style="color:{{ scolor }};">{{ trial.nct }}</a>{% else %}{{ trial.nct }}{% endif %}</p>
+            <p style="font-weight:600;font-size:15px;margin-bottom:var(--sp-3);">{{ trial.title }}</p>
+            <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-3);">
+              <span class="badge badge-info">{{ trial.phase }}</span>
+              <span class="badge badge-success">{{ trial.match }}% Match</span>
+              <span class="badge badge-primary">{{ trial.status }}</span>
+            </div>
+            <div style="padding:var(--sp-3);background:var(--lumi-white);border-radius:var(--r-input);font-size:13px;">
+              <p style="margin-bottom:2px;"><strong>Location:</strong> {{ trial.location }}</p>
+              <p style="margin-bottom:0;"><strong>Sponsor:</strong> {{ trial.sponsor }}</p>
+            </div>
+          </div>
+          {% endfor %}
+          {% if not result.trials %}
+          <div style="text-align:center;padding:var(--sp-8);color:var(--lumi-slate);">No matched trials found.</div>
+          {% endif %}
+          {% if result.trials and result.trials[0].source == 'live' %}
+          <p style="font-size:12px;color:var(--lumi-muted);margin:var(--sp-2) 0 0;">Live data from ClinicalTrials.gov · query: TNBC + {{ result.subtype }}-specific interventions.</p>
+          {% elif result.trials %}
+          <p style="font-size:12px;color:var(--lumi-muted);margin:var(--sp-2) 0 0;">Showing example trials, as the live ClinicalTrials.gov query was unavailable.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== CLINICAL INTELLIGENCE (provider only) ========== -->
+    {% if result.calibration or result.insights %}
+    <div style="margin-top:var(--sp-6);">
+
+      <!-- Confidence Calibration -->
+      {% if result.calibration and result.calibration.consistency_score is not none %}
+      <div class="card mb-6">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 class="card-title mb-0">Clinical Validation</h2>
+            {% set agr = result.calibration.clinical_agreement %}
+            <span class="badge badge-{% if agr == 'strong' %}success{% elif agr == 'moderate' %}info{% elif agr == 'weak' %}warning{% else %}danger{% endif %}">
+              {{ agr|capitalize }} Agreement
+            </span>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if result.calibration.raw_confidence != result.calibration.adjusted_confidence %}
+          <div style="display:flex;gap:var(--sp-6);margin-bottom:var(--sp-4);flex-wrap:wrap;">
+            <div style="text-align:center;">
+              <div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--lumi-muted);letter-spacing:0.5px;">ML Confidence</div>
+              <div style="font-size:28px;font-weight:700;color:var(--lumi-slate);">{{ result.calibration.raw_confidence }}%</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:24px;color:var(--lumi-muted);">&rarr;</div>
+            <div style="text-align:center;">
+              <div style="font-size:11px;text-transform:uppercase;font-weight:600;color:var(--lumi-muted);letter-spacing:0.5px;">Adjusted Confidence</div>
+              <div style="font-size:28px;font-weight:700;color:{% if result.calibration.adjusted_confidence > result.calibration.raw_confidence %}var(--lumi-success){% else %}var(--lumi-warning){% endif %};">{{ result.calibration.adjusted_confidence }}%</div>
+            </div>
+            <div style="flex:1;min-width:200px;display:flex;align-items:center;">
+              <div style="font-size:13px;color:var(--lumi-slate);line-height:1.5;">
+                {{ result.calibration.n_consistent }}/{{ result.calibration.n_checks }} clinical checks consistent with {{ result.subtype }} classification
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% for exp in result.calibration.explanations %}
+          <div style="padding:var(--sp-3);background:var(--lumi-background);border-radius:var(--r-input);margin-bottom:var(--sp-2);font-size:13px;border-left:3px solid {% if 'typical' in exp or 'consistent' in exp or 'within' in exp %}var(--lumi-success){% elif 'atypical' in exp or 'unusual' in exp or 'uncommon' in exp %}var(--lumi-warning){% else %}var(--lumi-blue){% endif %};">
+            {{ exp }}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Personalised Insights -->
+      {% if result.insights %}
+      <div class="grid grid-2">
+
+        <!-- Risk Profile -->
+        {% if result.insights.risk_profile %}
+        {% set rp = result.insights.risk_profile %}
+        <div class="card">
+          <div class="card-header">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <h2 class="card-title mb-0">Risk Profile</h2>
+              <span class="badge badge-{% if rp.overall_risk_level == 'low' %}success{% elif rp.overall_risk_level == 'moderate' %}warning{% else %}danger{% endif %}">
+                {{ rp.overall_risk_level|capitalize }} Risk
+              </span>
+            </div>
+          </div>
+          <div class="card-body">
+            {% if rp.subtype_risk.note %}
+            <div class="info-panel mb-4">{{ rp.subtype_risk.note }}</div>
+            {% endif %}
+
+            {% if rp.risk_factors %}
+            <p style="font-size:12px;text-transform:uppercase;font-weight:600;color:var(--lumi-muted);letter-spacing:0.5px;margin-bottom:var(--sp-2);">Risk Factors</p>
+            {% for rf in rp.risk_factors %}
+            <div style="padding:var(--sp-3);background:rgba(226,59,74,0.04);border-radius:var(--r-input);margin-bottom:var(--sp-2);font-size:13px;border-left:3px solid {% if rf.severity == 'high' %}var(--lumi-danger){% else %}var(--lumi-warning){% endif %};">
+              <strong>{{ rf.factor }}</strong>: {{ rf.detail }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if rp.protective_factors %}
+            <p style="font-size:12px;text-transform:uppercase;font-weight:600;color:var(--lumi-muted);letter-spacing:0.5px;margin-bottom:var(--sp-2);margin-top:var(--sp-4);">Protective Factors</p>
+            {% for pf in rp.protective_factors %}
+            <div style="padding:var(--sp-3);background:rgba(0,168,126,0.04);border-radius:var(--r-input);margin-bottom:var(--sp-2);font-size:13px;border-left:3px solid var(--lumi-success);">
+              <strong>{{ pf.factor }}</strong>: {{ pf.detail }}
+            </div>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Treatment Insights -->
+        {% if result.insights.treatment_insights %}
+        {% set ti = result.insights.treatment_insights %}
+        <div class="card">
+          <div class="card-header"><h2 class="card-title mb-0">Treatment Insights</h2></div>
+          <div class="card-body">
+            {% if ti.neoadjuvant_note %}
+            <div class="info-panel mb-4">{{ ti.neoadjuvant_note }}</div>
+            {% endif %}
+
+            {% if ti.brca_note %}
+            <div style="padding:var(--sp-3);background:rgba(196,110,156,0.06);border-radius:var(--r-input);margin-bottom:var(--sp-4);font-size:13px;border-left:3px solid var(--lumi-pink);">
+              {{ ti.brca_note }}
+            </div>
+            {% endif %}
+
+            {% if ti.stage_note %}
+            <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">{{ ti.stage_note }}</p>
+            {% endif %}
+
+            {% for approach in ti.get('primary_approaches', []) %}
+            <div style="padding:var(--sp-4);background:var(--lumi-background);border-radius:var(--r-input);margin-bottom:var(--sp-3);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-1);">
+                <strong style="font-size:14px;">{{ approach.name }}</strong>
+                <span class="badge badge-{% if approach.evidence == 'Strong' or approach.evidence == 'Standard of care' %}success{% elif 'Investigational' in approach.evidence or 'Early' in approach.evidence %}warning{% else %}info{% endif %}">{{ approach.evidence }}</span>
+              </div>
+              <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:0;">{{ approach.rationale }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}{# end treatment_insights #}
+
+      </div>{# end grid #}
+
+      <!-- Clinical Context Notes -->
+      {% if result.insights.clinical_context %}
+      <div class="card mt-6">
+        <div class="card-header"><h2 class="card-title mb-0">Clinical Context</h2></div>
+        <div class="card-body">
+          {% for note in result.insights.clinical_context %}
+          <div style="padding:var(--sp-3);background:var(--lumi-blue-light);border-radius:var(--r-input);margin-bottom:var(--sp-2);font-size:13px;">{{ note }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Patient vs Typical Comparison -->
+      {% if result.insights.patient_vs_typical %}
+      <div class="card mt-6">
+        <div class="card-header"><h2 class="card-title mb-0">Patient Profile vs Typical {{ result.subtype }}</h2></div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="table">
+              <thead><tr><th>Feature</th><th>Patient Value</th><th>Typical for {{ result.subtype }}</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for comp in result.insights.patient_vs_typical %}
+                <tr>
+                  <td style="font-weight:500;">{{ comp.feature }}</td>
+                  <td>{{ comp.patient_value }}</td>
+                  <td style="color:var(--lumi-slate);">{{ comp.typical_value }}</td>
+                  <td><span class="badge badge-{% if comp.status == 'typical' %}success{% else %}warning{% endif %}">{{ comp.status|capitalize }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}{# end patient_vs_typical #}
+
+      {% endif %}{# end result.insights #}
+
+    </div>
+    {% endif %}{# end calibration or insights #}
+
+    {% endif %}{# end provider/patient branch #}
+
+    {% else %}
+    <!-- Empty state -->
+    <div style="text-align:center;padding:var(--sp-20) var(--sp-6);">
+      <h2 style="margin-bottom:var(--sp-3);">No Analysis Results Yet</h2>
+      <p style="color:var(--lumi-slate);max-width:460px;margin:0 auto var(--sp-6);">Upload gene expression data or enter clinical information to get your TNBC molecular subtype classification.</p>
+      <a href="{{ url_for('classification') }}" class="btn btn-primary btn-lg">Start Analysis</a>
+    </div>
+    {% endif %}
+
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{% if result and (user.get('role') == 'patient' or user.get('is_guest')) %}
+<script id="chartData" type="application/json">
+{
+  "probabilities": {{ result.probabilities|tojson if result.probabilities else '{}' }},
+  "subtype": {{ result.subtype|tojson }},
+  "confidence": {{ result.confidence|tojson }},
+  "subtypeColors": {
+    "BL1": "#C46E9C", "BL2": "#E3B5CC", "LAR": "#5E93BE", "M": "#2C9C84"
+  },
+  "shap": {{ patient_shap_chart|tojson }},
+  "analysisId": {{ analysis_id|tojson }},
+  "llmEnabled": {{ 'true' if llm_summary_enabled else 'false' }}
+}
+</script>
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+(function () {
+  var data = JSON.parse(document.getElementById('chartData').textContent);
+
+  // ── Donut: confidence gauge for the result subtype only ─────────────
+  var _charts = [];
+  var donut = document.getElementById('confidenceDonut');
+  if (donut && window.Chart && data.confidence != null) {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var trackColor = isDark ? '#2A2230' : '#F1E3EB';
+    var borderCol = isDark ? '#1B2430' : '#ffffff';
+    var conf = Math.max(0, Math.min(100, parseFloat(data.confidence) || 0));
+    var subColor = data.subtypeColors[data.subtype] || '#C46E9C';
+    _charts.push(new Chart(donut, {
+      type: 'doughnut',
+      data: {
+        labels: ['Confidence', 'Remaining'],
+        datasets: [{
+          data: [conf, 100 - conf],
+          backgroundColor: [subColor, trackColor],
+          borderWidth: 2,
+          borderColor: borderCol
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        animation: { duration: 700 },
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        }
+      }
+    }));
+  }
+
+  // ── Horizontal bar: what pushed the decision ────────────────────────
+  var bar = document.getElementById('shapBar');
+  if (bar && window.Chart && data.shap && data.shap.length) {
+    _charts.push(new Chart(bar, {
+      type: 'bar',
+      data: {
+        labels: data.shap.map(function (s) { return s.label; }),
+        datasets: [{
+          data: data.shap.map(function (s) { return s.value; }),
+          backgroundColor: data.shap.map(function (s) { return s.supports ? '#C46E9C' : '#5E93BE'; }),
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false, beginAtZero: true },
+          y: { ticks: { font: { size: 12 } }, grid: { display: false } }
+        }
+      }
+    }));
+  }
+
+  // ── LLM layer: personalised summary (only if enabled server-side) ───
+  if (data.llmEnabled && data.analysisId) {
+    var card = document.getElementById('personalSummaryCard');
+    var loading = document.getElementById('summaryLoading');
+    var text = document.getElementById('summaryText');
+    if (card) card.style.display = 'block';
+    fetch('/api/summary/' + encodeURIComponent(data.analysisId))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.enabled && d.summary) {
+          if (loading) loading.style.display = 'none';
+          text.textContent = d.summary;
+          text.style.display = 'block';
+        } else if (card) {
+          card.style.display = 'none'; // disabled or failed, hide quietly
+        }
+      })
+      .catch(function () { if (card) card.style.display = 'none'; });
+  }
+
+  // ── Style C tabs: switch panels (no scrolling between sections) ──────
+  (function () {
+    var tabs = document.querySelectorAll('.result-tabbar .result-tab');
+    var panels = document.querySelectorAll('.result-section');
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var name = tab.getAttribute('data-panel');
+        tabs.forEach(function (t) { t.classList.toggle('active', t === tab); });
+        panels.forEach(function (p) {
+          p.classList.toggle('active', p.getAttribute('data-panel') === name);
+        });
+        // Charts can't size while hidden; resize them once their panel shows.
+        if (name === 'charts') {
+          requestAnimationFrame(function () {
+            _charts.forEach(function (ch) { try { ch.resize(); } catch (e) {} });
+          });
+        }
+      });
+    });
+  })();
+
+  {% if not user.get('is_guest') %}
+  // ── Provider review: drive the request/status/feedback card ─────────
+  var reviewAnalysisId = data.analysisId;
+  var DECLINE_KEY = 'lumitnbc_review_declined';  // in-memory only; see note
+
+  function showReviewState(state) {
+    var ids = {ask: 'reviewAsk', pending: 'reviewPending', done: 'reviewDone'};
+    Object.keys(ids).forEach(function (k) {
+      var el = document.getElementById(ids[k]);
+      if (el) el.style.display = (k === state) ? 'block' : 'none';
+    });
+  }
+
+  function loadReviewStatus() {
+    if (!reviewAnalysisId) return;
+    fetch('/api/review/status/' + encodeURIComponent(reviewAnalysisId))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.requested) { showReviewState('ask'); return; }
+        if (d.status === 'reviewed') {
+          document.getElementById('reviewText').textContent = d.review_text || '';
+          var meta = 'Reviewed' + (d.reviewed_at ? ' on ' + d.reviewed_at.slice(0, 10) : '');
+          document.getElementById('reviewMeta').textContent = meta + '. Please discuss with your own care team.';
+          showReviewState('done');
+        } else {
+          showReviewState('pending');
+        }
+      })
+      .catch(function () { showReviewState('ask'); });
+  }
+
+  window.requestReview = function () {
+    fetch('/api/review/request', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({analysis_id: reviewAnalysisId})
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.success) {
+          showReviewState(d.status === 'reviewed' ? 'done' : 'pending');
+          if (d.status === 'reviewed') loadReviewStatus();
+          else if (window.showToast) showToast('Review requested. A provider will respond here.', 'success');
+        } else if (window.showToast) { showToast(d.message || 'Could not request a review.', 'error'); }
+      })
+      .catch(function () { if (window.showToast) showToast('Network error. Please try again.', 'error'); });
+  };
+
+  window.declineReview = function () {
+    var card = document.getElementById('reviewCard');
+    if (card) card.style.display = 'none';
+  };
+
+  loadReviewStatus();
+  {% endif %}{# end not guest: review JS #}
+})();
+</script>
+{% endif %}
+{% endblock %}

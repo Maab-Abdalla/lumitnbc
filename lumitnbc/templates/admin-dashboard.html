@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set active_page = 'admin' %}
+{% block title %}Admin | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container">
+    <h1 style="margin-bottom:var(--sp-8);">System Administration</h1>
+    <div class="stats-grid mb-8 reveal">
+      <div class="stat-card"><div class="stat-value" data-countup="{{ users|length }}">{{ users|length }}</div><div class="stat-label">Total Users</div></div>
+      <div class="stat-card" style="border-left-color:var(--lumi-blue);"><div class="stat-value" data-countup="{{ analyses|length }}">{{ analyses|length }}</div><div class="stat-label">Total Analyses</div></div>
+      <div class="stat-card" style="border-left-color:var(--lumi-success);"><div class="stat-value" data-countup="{{ users|selectattr('role','equalto','provider')|list|length }}">{{ users|selectattr('role','equalto','provider')|list|length }}</div><div class="stat-label">Providers</div></div>
+      <div class="stat-card" style="border-left-color:var(--lumi-warning);"><div class="stat-value" data-countup="98.7" data-decimals="1" data-suffix="%">98.7%</div><div class="stat-label">Uptime</div></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">System Status</h2></div>
+        <div class="card-body">
+          {% for name, detail, ok in [('API Server','Response: 45ms',true),('Database','Query: 12ms',true),('ML Model','XGBoost v1',true),('Storage','2.4 TB / 3.3 TB',false)] %}
+          <div style="padding:var(--sp-4);background:var(--lumi-background);border-radius:var(--r-input);border-left:4px solid {% if ok %}var(--lumi-success){% else %}var(--lumi-warning){% endif %};margin-bottom:var(--sp-3);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:600;">{{ name }}</span>
+              <span class="badge badge-{% if ok %}success{% else %}warning{% endif %}">{% if ok %}Operational{% else %}73% Used{% endif %}</span>
+            </div>
+            <p style="font-size:13px;color:var(--lumi-slate);margin:4px 0 0;">{{ detail }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Registered Users</h2></div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="table">
+              <thead><tr><th>User</th><th>Role</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for u in users %}
+                <tr>
+                  <td style="font-weight:500;">{{ u.name }}</td>
+                  <td><span class="badge badge-{% if u.role=='provider' %}info{% elif u.role=='admin' %}warning{% else %}primary{% endif %}">{{ u.role|capitalize }}</span></td>
+                  <td><span class="badge badge-success">Active</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo tools -->
+    <div class="card mt-6 reveal">
+      <div class="card-header"><h2 class="card-title mb-0">Demo Tools</h2></div>
+      <div class="card-body">
+        <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Reset the app to a clean state before a demo. This removes all analyses and review requests but keeps user accounts.</p>
+        <button onclick="clearDemoData()" class="btn btn-outline">Clear all analyses &amp; reviews</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+async function clearDemoData() {
+  if (!confirm('Delete all analyses and review requests? User accounts are kept. This cannot be undone.')) return;
+  try {
+    var r = await fetch('/api/admin/clear-data', {method: 'POST'});
+    var d = await r.json();
+    if (d.success) { showToast(d.message || 'Demo data cleared.', 'success'); setTimeout(function(){ location.reload(); }, 1200); }
+    else showToast(d.message || 'Could not clear data.', 'error');
+  } catch (e) { showToast('Network error. Please try again.', 'error'); }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% set active_page = 'classification' %}
+{% block title %}New Analysis | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+<main style="padding:var(--sp-12) var(--sp-6); min-height:calc(100vh - 72px); overflow-y:auto;">
+  <div class="container container--narrow">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-4);">
+      <h1 style="margin-bottom:0;">New TNBC Analysis</h1>
+      <div style="display:flex;align-items:center;gap:var(--sp-3);background:var(--lumi-white);padding:8px 16px;border-radius:var(--r-pill);border:1px solid rgba(196,110,156,0.1);">
+        <span style="font-size:13px;font-weight:500;color:var(--lumi-slate);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><line x1="6" y1="3" x2="6" y2="21"></line><line x1="18" y1="3" x2="18" y2="21"></line><path d="M6 6c4 0 8 3 12 3M6 12c4 0 8-3 12-3M6 18c4 0 8-3 12-3"></path></svg> Gene Expression</span>
+        <label class="toggle-switch"><input type="checkbox" id="inputModeToggle" onchange="toggleInputMode()"><span class="toggle-slider"></span></label>
+        <span style="font-size:13px;font-weight:500;color:var(--lumi-slate);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="13" y2="15"></line></svg> Clinical Data</span>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="msg" style="display:none;padding:var(--sp-4);border-radius:var(--r-input);margin-bottom:var(--sp-4);font-size:14px;"></div>
+
+    <!-- Loading -->
+    <div id="loader" style="display:none;position:fixed;inset:0;background:var(--lumi-background);z-index:9999;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;padding:var(--sp-12) var(--sp-6);">
+      <div style="max-width:760px;width:100%;">
+        <div style="text-align:center;margin-bottom:var(--sp-8);">
+          <div class="spinner" style="margin:0 auto var(--sp-4);"></div>
+          <h2 style="margin-bottom:var(--sp-1);">Analysing your data</h2>
+          <p id="loader-text" style="color:var(--lumi-slate);">Running XGBoost classification</p>
+        </div>
+        <!-- Skeleton preview shaped like the results page -->
+        <div class="card" style="padding:var(--sp-8);margin-bottom:var(--sp-5);text-align:center;">
+          <div class="skeleton skeleton-line short" style="margin:0 auto var(--sp-4);height:12px;"></div>
+          <div class="skeleton" style="height:34px;width:60%;margin:0 auto var(--sp-3);border-radius:var(--r-input);"></div>
+          <div class="skeleton skeleton-line med" style="margin:0 auto;"></div>
+        </div>
+        <div class="grid grid-2" style="gap:var(--sp-5);">
+          <div class="card" style="padding:var(--sp-6);">
+            <div class="skeleton-circle skeleton" style="margin:0 auto var(--sp-4);"></div>
+            <div class="skeleton skeleton-line med" style="margin:0 auto;"></div>
+          </div>
+          <div class="card" style="padding:var(--sp-6);">
+            <div class="skeleton skeleton-line" style="height:18px;"></div>
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line med"></div>
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== UPLOAD MODE ===== -->
+    <div id="uploadMode">
+      <div class="card" style="padding:var(--sp-8);text-align:center;">
+        <h2 style="margin-bottom:var(--sp-2);">Upload Gene Expression Data</h2>
+        <p style="color:var(--lumi-slate);margin-bottom:var(--sp-2);">For the most accurate ML-based molecular subtype classification</p>
+        <p style="font-size:13px;color:var(--lumi-blue);margin-bottom:var(--sp-6);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Expects expression values for 150 genes (BMP4, GBP5, BATF, TGFBI…)</p>
+
+        <div id="dropzone" style="border:3px dashed var(--lumi-pink);border-radius:var(--r-feat);padding:var(--sp-16) var(--sp-8);background:var(--lumi-blush-half);cursor:pointer;margin-bottom:var(--sp-4);transition:all 0.2s;"
+             ondragover="event.preventDefault();this.style.borderColor='var(--lumi-success)';this.style.background='rgba(0,168,126,0.04)';"
+             ondragleave="this.style.borderColor='var(--lumi-pink)';this.style.background='var(--lumi-blush-half)';"
+             ondrop="handleDrop(event)" onclick="document.getElementById('fileIn').click()">
+          <div style="color:var(--lumi-pink);margin-bottom:var(--sp-4);display:flex;justify-content:center;"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></div>
+          <p style="font-weight:600;font-size:18px;margin-bottom:var(--sp-1);">Drag & Drop or Click to Upload</p>
+          <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:0;">CSV, TSV, TXT · Max 50 MB</p>
+        </div>
+        <input type="file" id="fileIn" accept=".csv,.tsv,.txt" style="display:none" onchange="pickFile(this)">
+
+        <div id="fileInfo" style="display:none;padding:var(--sp-4);background:var(--lumi-blue-light);border-radius:var(--r-input);margin-bottom:var(--sp-4);text-align:left;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><span style="margin-right:8px;color:var(--lumi-blue);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span><span id="fName" style="font-weight:500;"></span> <span id="fSize" style="color:var(--lumi-slate);font-size:12px;"></span></div>
+            <button onclick="clearFile()" style="background:none;border:none;color:var(--lumi-danger);cursor:pointer;font-size:16px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+          </div>
+        </div>
+
+        <button id="uploadBtn" class="btn btn-primary btn-lg" onclick="submitUpload()" disabled>
+          Start Analysis
+        </button>
+
+        <!-- Demo sample files -->
+        <div style="margin-top:var(--sp-6);padding:var(--sp-5);background:var(--lumi-blue-light);border-radius:var(--r-input);text-align:left;">
+          <p style="font-weight:600;font-size:15px;margin-bottom:var(--sp-1);">No data of your own? Try a sample file</p>
+          <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Download one of these example gene-expression files, then upload it above to see how the analysis works.</p>
+          <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;">
+            <a href="{{ url_for('sample_data', key='bl1') }}" class="btn btn-outline btn-sm" download>Basal-Like 1 sample</a>
+            <a href="{{ url_for('sample_data', key='bl2') }}" class="btn btn-outline btn-sm" download>Basal-Like 2 sample</a>
+            <a href="{{ url_for('sample_data', key='lar') }}" class="btn btn-outline btn-sm" download>Luminal AR sample</a>
+            <a href="{{ url_for('sample_data', key='m') }}" class="btn btn-outline btn-sm" download>Mesenchymal sample</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CLINICAL MODE ===== -->
+    <div id="manualMode" style="display:none;">
+      <div class="card" style="padding:var(--sp-6);">
+
+        <div class="info-panel mb-6">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <strong>Clinical Mode:</strong> Uses rule-based approximation from IHC markers and pathology data. For the most accurate ML classification, use the Gene Expression upload.
+        </div>
+
+        <!-- Demographics -->
+        <div class="section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Patient Demographics</div>
+        <div class="grid grid-3 mb-6">
+          <div class="form-group"><label class="form-label">Age at Diagnosis <span class="text-danger">*</span></label><input type="number" id="c-age" class="form-input" placeholder="Age"></div>
+          <div class="form-group"><label class="form-label">Menopausal Status</label>
+            <select id="c-menopausal" class="form-input"><option value="">Select…</option><option value="premenopausal">Premenopausal</option><option value="postmenopausal">Postmenopausal</option><option value="perimenopausal">Perimenopausal</option></select></div>
+          <div class="form-group"><label class="form-label">BRCA Mutation Status</label>
+            <select id="c-brca" class="form-input"><option value="">Select…</option><option value="brca1_positive">BRCA1 Positive</option><option value="brca2_positive">BRCA2 Positive</option><option value="negative">Negative</option><option value="unknown">Unknown / Not Tested</option></select></div>
+        </div>
+
+        <!-- Tumour -->
+        <div class="section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> Tumour Characteristics</div>
+        <div class="grid grid-3 mb-6">
+          <div class="form-group"><label class="form-label">Histologic Type <span class="text-danger">*</span></label>
+            <select id="c-histology" class="form-input"><option value="">Select…</option><option value="ductal_nst">Invasive Ductal (NST)</option><option value="lobular">Invasive Lobular</option><option value="apocrine">Apocrine</option><option value="metaplastic">Metaplastic</option><option value="medullary">Medullary-like</option><option value="mixed">Mixed</option><option value="other">Other</option></select></div>
+          <div class="form-group"><label class="form-label">Tumour Size (cm) <span class="text-danger">*</span></label><input type="number" step="0.1" id="c-size" class="form-input" placeholder="e.g. 2.5"></div>
+          <div class="form-group"><label class="form-label">Histologic Grade <span class="text-danger">*</span></label>
+            <select id="c-grade" class="form-input"><option value="">Select…</option><option value="1">Grade 1</option><option value="2">Grade 2</option><option value="3">Grade 3</option></select></div>
+        </div>
+
+        <!-- TNM -->
+        <div class="section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect><line x1="8" y1="11" x2="16" y2="11"></line><line x1="8" y1="15" x2="13" y2="15"></line></svg> TNM Staging</div>
+        <div class="grid grid-3 mb-6">
+          <div class="form-group"><label class="form-label">Clinical Stage <span class="text-danger">*</span></label>
+            <select id="c-stage" class="form-input"><option value="">Select…</option><option value="1">Stage I</option><option value="2">Stage II</option><option value="3">Stage III</option><option value="4">Stage IV</option></select></div>
+          <div class="form-group"><label class="form-label">Lymph Node Status <span class="text-danger">*</span></label>
+            <select id="c-lymph" class="form-input"><option value="">Select…</option><option value="n0">N0 (Negative)</option><option value="n1">N1 (1–3 nodes)</option><option value="n2">N2 (4–9 nodes)</option><option value="n3">N3 (≥10 nodes)</option></select></div>
+          <div class="form-group"><label class="form-label">Lymphovascular Invasion</label>
+            <select id="c-lvi" class="form-input"><option value="">Select…</option><option value="present">Present</option><option value="absent">Absent</option><option value="unknown">Unknown</option></select></div>
+        </div>
+
+        <!-- IHC -->
+        <div class="section-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M6 18h8"></path><path d="M3 22h18"></path><path d="M14 22a7 7 0 1 0 0-14h-1"></path><path d="M9 14h2"></path><path d="M9 12a2 2 0 0 1-2-2V6a2 2 0 0 1 4 0v4a2 2 0 0 1-2 2z"></path></svg> IHC Markers</div>
+        <div class="grid grid-3 mb-4">
+          <div class="form-group"><label class="form-label">Ki-67 Index (%) <span class="text-danger">*</span></label><input type="number" id="c-ki67" class="form-input" placeholder="e.g. 45"><p style="font-size:11px;color:var(--lumi-muted);margin-top:4px;">Proliferation marker (0–100%)</p></div>
+          <div class="form-group"><label class="form-label">Androgen Receptor (AR)</label>
+            <select id="c-ar" class="form-input"><option value="">Select…</option><option value="positive_high">Positive (Strong)</option><option value="positive_low">Positive (Weak)</option><option value="negative">Negative</option><option value="unknown">Unknown</option></select><p style="font-size:11px;color:var(--lumi-muted);margin-top:4px;">Key marker for LAR subtype</p></div>
+          <div class="form-group"><label class="form-label">EGFR Status</label>
+            <select id="c-egfr" class="form-input"><option value="">Select…</option><option value="positive">Positive</option><option value="negative">Negative</option><option value="unknown">Unknown</option></select><p style="font-size:11px;color:var(--lumi-muted);margin-top:4px;">Basal-like marker</p></div>
+        </div>
+        <div class="grid grid-3 mb-6">
+          <div class="form-group"><label class="form-label">Basal Cytokeratins (CK5/6)</label>
+            <select id="c-ck56" class="form-input"><option value="">Select…</option><option value="positive">Positive</option><option value="negative">Negative</option><option value="unknown">Unknown</option></select></div>
+          <div class="form-group"><label class="form-label">PD-L1 Expression</label>
+            <select id="c-pdl1" class="form-input"><option value="">Select…</option><option value="positive_high">Positive (≥1%)</option><option value="negative">Negative (&lt;1%)</option><option value="unknown">Unknown</option></select></div>
+          <div class="form-group"><label class="form-label">Stromal TILs (%)</label><input type="number" id="c-tils" class="form-input" placeholder="e.g. 20"><p style="font-size:11px;color:var(--lumi-muted);margin-top:4px;">Tumour-infiltrating lymphocytes</p></div>
+        </div>
+
+        <div style="text-align:center;">
+          <button class="btn btn-primary btn-lg" onclick="submitClinical()">Start Analysis</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let file=null;
+function toggleInputMode(){document.getElementById('uploadMode').style.display=document.getElementById('inputModeToggle').checked?'none':'block';document.getElementById('manualMode').style.display=document.getElementById('inputModeToggle').checked?'block':'none';hideMsg();}
+function showMsg(t,err){const m=document.getElementById('msg');m.textContent=t;m.style.display='block';m.style.background=err?'rgba(226,59,74,0.08)':'rgba(0,168,126,0.08)';m.style.color=err?'var(--lumi-danger)':'var(--lumi-success)';}
+function hideMsg(){document.getElementById('msg').style.display='none';}
+function showLoader(t){document.getElementById('loader-text').textContent=t||'Processing…';document.getElementById('loader').style.display='flex';}
+function hideLoader(){document.getElementById('loader').style.display='none';}
+function pickFile(inp){if(inp.files&&inp.files[0]){file=inp.files[0];showFile();}}
+function handleDrop(e){e.preventDefault();document.getElementById('dropzone').style.borderColor='var(--lumi-pink)';document.getElementById('dropzone').style.background='var(--lumi-blush-half)';if(e.dataTransfer.files&&e.dataTransfer.files[0]){file=e.dataTransfer.files[0];showFile();}}
+function showFile(){document.getElementById('fName').textContent=file.name;document.getElementById('fSize').textContent='('+Math.round(file.size/1024)+' KB)';document.getElementById('fileInfo').style.display='block';document.getElementById('uploadBtn').disabled=false;hideMsg();}
+function clearFile(){file=null;document.getElementById('fileInfo').style.display='none';document.getElementById('uploadBtn').disabled=true;document.getElementById('fileIn').value='';}
+async function submitUpload(){if(!file){showMsg('Please select a file first',true);return;}showLoader('Running XGBoost classification…');hideMsg();const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/classify/upload',{method:'POST',body:fd});const d=await r.json();hideLoader();if(d.error)showMsg(d.message,true);else window.location.href='/results/'+d.analysis_id;}catch(e){hideLoader();showMsg('Connection error: '+e.message,true);}}
+async function submitClinical(){if(!document.getElementById('c-age').value||!document.getElementById('c-ki67').value){showMsg('Please fill in all required fields (*)',true);return;}showLoader('Analysing clinical markers…');hideMsg();const p={age:document.getElementById('c-age').value,menopausal_status:document.getElementById('c-menopausal').value,brca_status:document.getElementById('c-brca').value,histologic_type:document.getElementById('c-histology').value,tumor_size:document.getElementById('c-size').value,grade:document.getElementById('c-grade').value,stage:document.getElementById('c-stage').value,lymph_node:document.getElementById('c-lymph').value,lvi:document.getElementById('c-lvi').value,ki67:document.getElementById('c-ki67').value,ar_status:document.getElementById('c-ar').value,egfr_status:document.getElementById('c-egfr').value,ck56_status:document.getElementById('c-ck56').value,pdl1_status:document.getElementById('c-pdl1').value,tils:document.getElementById('c-tils').value};try{const r=await fetch('/api/classify/clinical',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});const d=await r.json();hideLoader();if(d.error)showMsg(d.message,true);else window.location.href='/results/'+d.analysis_id;}catch(e){hideLoader();showMsg('Connection error: '+e.message,true);}}
+</script>
+{% endblock %}

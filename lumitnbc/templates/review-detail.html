@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% set active_page = 'provider' %}
+{% block title %}Review {{ review.patient_code }} | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+{% set info = subtype_info.get(result.subtype, {}) if result else {} %}
+{% set scolor = info.get('color', 'var(--lumi-pink)') %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container container--tight">
+
+    <div style="margin-bottom:var(--sp-6);">
+      <a href="{{ url_for('provider_dashboard') }}" style="font-size:14px;font-weight:500;">← Back to queue</a>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-6);flex-wrap:wrap;gap:var(--sp-3);">
+      <div>
+        <h1 style="margin-bottom:var(--sp-1);">Review · {{ review.patient_code }}</h1>
+        <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:0;">Analysis {{ review.analysis_id }} · requested {{ review.requested_at[:10] if review.requested_at else '' }}</p>
+      </div>
+      <span class="badge badge-{% if review.status == 'reviewed' %}success{% else %}warning{% endif %}" style="padding:8px 18px;">{{ review.status|capitalize }}</span>
+    </div>
+
+    {% if result %}
+    <!-- AI classification summary -->
+    <div style="background:linear-gradient(135deg,#FEE8F1 0%,#FFFAFD 100%);border:2px solid {{ scolor }};border-radius:var(--r-feat);padding:var(--sp-6);margin-bottom:var(--sp-6);text-align:center;">
+      <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lumi-slate);margin-bottom:var(--sp-1);font-weight:600;">AI Predicted Subtype</p>
+      <h2 style="font-size:30px;color:{{ scolor }};margin-bottom:var(--sp-2);">{{ info.get('full_name', result.subtype) }} ({{ result.subtype }})</h2>
+      <span class="badge badge-success">Confidence {{ result.confidence }}%</span>
+      <span class="badge badge-{% if result.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}">{{ 'AI Model' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Rules' }}</span>
+    </div>
+
+    <div class="grid grid-2 mb-6">
+      <!-- Probabilities -->
+      {% if result.probabilities %}
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Probabilities</h2></div>
+        <div class="card-body">
+          {% for sub, prob in result.probabilities.items() %}
+          {% set subcol = subtype_info.get(sub,{}).get('color','var(--lumi-pink)') %}
+          <div style="margin-bottom:var(--sp-3);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;">
+              <span style="font-weight:{% if sub==result.subtype %}700{% else %}500{% endif %};">{{ sub }}</span>
+              <span style="font-weight:700;color:{{ subcol }};">{{ prob }}%</span>
+            </div>
+            <div class="progress"><div class="progress-bar" style="width:{{ prob }}%;background:{{ subcol }};"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Top SHAP features (clinical, with gene names) -->
+      {% if result.shap_features %}
+      <div class="card">
+        <div class="card-header"><h2 class="card-title mb-0">Top Features (SHAP)</h2></div>
+        <div class="card-body">
+          {% set mx = result.shap_features[0].abs_shap if result.shap_features else 1 %}
+          {% for f in result.shap_features[:8] %}
+          <div style="margin-bottom:var(--sp-3);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;">
+              <span style="font-family:monospace;">{{ f.gene }}{% if f.is_clinical %} <span style="color:var(--lumi-slate);font-family:sans-serif;">[clin]</span>{% endif %}</span>
+              <span style="font-weight:600;color:{% if f.shap_value>0 %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">{% if f.shap_value>0 %}+{% endif %}{{ f.shap_value }}</span>
+            </div>
+            <div class="progress"><div class="progress-bar" style="width:{{ (f.abs_shap/mx*100)|round }}%;background:{% if f.shap_value>0 %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};"></div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Clinical context if available -->
+    {% if info.description %}
+    <div class="card mb-6">
+      <div class="card-header"><h2 class="card-title mb-0">Subtype Background</h2></div>
+      <div class="card-body">
+        <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin-bottom:var(--sp-3);">{{ info.description }}</p>
+        <div style="display:flex;gap:var(--sp-8);flex-wrap:wrap;font-size:13px;">
+          <div><strong>Key pathways:</strong> {{ info.key_pathways }}</div>
+          <div><strong>Clinical relevance:</strong> {{ info.clinical_relevance }}</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="info-panel mb-6">The underlying analysis could not be loaded.</div>
+    {% endif %}
+
+    <!-- Review form / completed review -->
+    <div class="card" style="border-top:4px solid {{ scolor }};">
+      <div class="card-header"><h2 class="card-title mb-0">Your Review</h2></div>
+      <div class="card-body">
+        {% if review.status == 'reviewed' %}
+          <div style="padding:var(--sp-4);background:var(--lumi-blush-half);border-radius:var(--r-input);font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ review.review_text }}</div>
+          <p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-3);">Submitted {{ review.reviewed_at[:16].replace('T',' ') if review.reviewed_at else '' }}{% if review.reviewer_name %} by {{ review.reviewer_name }}{% endif %}. This has been sent to the patient.</p>
+        {% else %}
+          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Write feedback for the patient in plain, supportive language. They will see this on their results page. Avoid identifying information.</p>
+          <div id="review-msg" style="display:none;padding:var(--sp-3);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-size:13px;"></div>
+          <textarea id="review-text" class="form-input" rows="7" placeholder="e.g. I've reviewed your classification and the result is consistent with the molecular markers shown. I'd suggest discussing the following with your oncology team..." style="resize:vertical;margin-bottom:var(--sp-4);"></textarea>
+          <button onclick="submitReview()" class="btn btn-primary">Submit Review to Patient</button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</main>
+
+{% if review.status != 'reviewed' %}
+<script>
+async function submitReview() {
+  var text = document.getElementById('review-text').value.trim();
+  if (text.length < 10) { showToast('Please write at least a sentence of feedback.', 'error'); return; }
+  try {
+    var r = await fetch('/api/review/{{ review.id }}/submit', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({review_text: text})
+    });
+    var d = await r.json();
+    if (d.success) { showToast('Review submitted and sent to the patient.', 'success'); setTimeout(function(){ window.location.href = '{{ url_for("provider_dashboard") }}'; }, 1000); }
+    else showToast(d.message || 'Submission failed.', 'error');
+  } catch (e) { showToast('Network error. Please try again.', 'error'); }
+}
+</script>
+{% endif %}
+{% endblock %}

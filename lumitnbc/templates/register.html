@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Sign In | LumiTNBC{% endblock %}
+{% block body %}
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:var(--sp-6); background:linear-gradient(180deg, #FEE8F1 0%, #F9FBFD 100%);">
+  <div style="width:100%; max-width:440px;">
+
+    <div style="text-align:center; margin-bottom:var(--sp-6);">
+      <img src="{{ url_for('static', filename='images/lumiTNBC-logo.png') }}" alt="LumiTNBC" style="max-width:220px; width:100%; height:auto;">
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('register')">Register</button>
+        <button class="tab" onclick="showTab('login')">Login</button>
+      </div>
+
+      <!-- Register -->
+      <div id="register-form" style="padding:var(--sp-6); background:var(--lumi-blush-half);">
+        <div id="register-error" style="display:none; padding:var(--sp-3); background:rgba(226,59,74,0.08); color:var(--lumi-danger); border-radius:var(--r-input); margin-bottom:var(--sp-4); font-size:13px;"></div>
+        <div class="form-group"><input type="text" id="reg-name" class="form-input" placeholder="Full name"></div>
+        <div class="form-group"><input type="email" id="reg-email" class="form-input" placeholder="Email address"></div>
+        <div class="form-group"><input type="password" id="reg-password" class="form-input" placeholder="Password"></div>
+        <div class="form-group"><input type="password" id="reg-confirm" class="form-input" placeholder="Confirm password"></div>
+        <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-5);">
+          <input type="checkbox" id="terms" style="width:18px;height:18px;accent-color:var(--lumi-pink);">
+          <label for="terms" style="font-size:13px;color:var(--lumi-slate);">I agree to the <a href="#" class="form-link">terms and conditions</a></label>
+        </div>
+        <button onclick="handleRegister()" class="btn btn-primary btn-block">Create Account</button>
+      </div>
+
+      <!-- Login -->
+      <div id="login-form" style="padding:var(--sp-6); background:var(--lumi-blush-half); display:none;">
+        <div id="login-error" style="display:none; padding:var(--sp-3); background:rgba(226,59,74,0.08); color:var(--lumi-danger); border-radius:var(--r-input); margin-bottom:var(--sp-4); font-size:13px;"></div>
+        <div class="form-group"><input type="email" id="login-email" class="form-input" placeholder="Email address"></div>
+        <div class="form-group"><input type="password" id="login-password" class="form-input" placeholder="Password"></div>
+        <div style="text-align:right;margin-bottom:var(--sp-5);"><a href="#" class="form-link" style="font-size:13px;">Forgot password?</a></div>
+        <button onclick="handleLogin()" class="btn btn-primary btn-block">Sign In</button>
+        <div style="margin-top:var(--sp-5);padding:var(--sp-4);background:var(--lumi-blue-light);border-radius:var(--r-input);font-size:12px;color:var(--lumi-slate);">
+          <strong>Demo accounts:</strong><br>
+          Patient: sarah@email.com / password123<br>
+          Provider: dr.brown@hospital.com / password123<br>
+          Admin: admin@lumitnbc.com / admin123
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'register') {
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('register-form').style.display = 'block';
+    document.getElementById('login-form').style.display = 'none';
+  } else {
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+  }
+}
+async function handleLogin() {
+  const email = document.getElementById('login-email').value, password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error'); err.style.display = 'none';
+  try {
+    const r = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password})});
+    const d = await r.json();
+    if (d.success) window.location.href = d.redirect;
+    else { err.textContent = d.message||'Invalid credentials'; err.style.display = 'block'; }
+  } catch(e) { err.textContent = 'Connection error'; err.style.display = 'block'; }
+}
+async function handleRegister() {
+  const name=document.getElementById('reg-name').value, email=document.getElementById('reg-email').value,
+    password=document.getElementById('reg-password').value, confirm=document.getElementById('reg-confirm').value;
+  const err = document.getElementById('register-error'); err.style.display = 'none';
+  if (password !== confirm) { err.textContent = 'Passwords do not match'; err.style.display = 'block'; return; }
+  try {
+    const r = await fetch('/api/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, email, password})});
+    const d = await r.json();
+    if (d.success) window.location.href = d.redirect;
+    else { err.textContent = d.message||'Registration failed'; err.style.display = 'block'; }
+  } catch(e) { err.textContent = 'Connection error'; err.style.display = 'block'; }
+}
+</script>
+{% endblock %}

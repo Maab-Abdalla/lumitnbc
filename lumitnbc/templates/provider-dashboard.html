@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set active_page = 'provider' %}
+{% block title %}Review Queue | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container">
+    <h1 style="margin-bottom:var(--sp-2);">Review Queue</h1>
+    <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-8);">Patients who asked for a professional review of their AI classification. Patient identities are anonymised; you see a patient code only.</p>
+
+    <div class="stats-grid mb-8 reveal">
+      <div class="stat-card"><div class="stat-value" data-countup="{{ pending|length }}">{{ pending|length }}</div><div class="stat-label">Pending Review</div></div>
+      <div class="stat-card" style="border-left-color:var(--lumi-success);"><div class="stat-value" data-countup="{{ reviewed|length }}">{{ reviewed|length }}</div><div class="stat-label">Completed</div></div>
+      <div class="stat-card" style="border-left-color:var(--lumi-blue);"><div class="stat-value" data-countup="{{ pending|length + reviewed|length }}">{{ pending|length + reviewed|length }}</div><div class="stat-label">Total Requests</div></div>
+    </div>
+
+    <!-- Population insights (aggregate, de-identified) -->
+    <div class="card mb-8 reveal">
+      <div class="card-header"><h2 class="card-title mb-0">Population Insights</h2></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">Aggregate statistics across all {{ stats.total }} analysis{{ '' if stats.total == 1 else 'es' }} run in the system. No patient-identifying information is shown.</p>
+
+        {% if stats.total %}
+        <div class="stats-grid mb-6">
+          <div class="stat-card">
+            <div class="stat-value">{{ stats.most_common.subtype if stats.most_common else '-' }}</div>
+            <div class="stat-label">Most common subtype{% if stats.most_common %} ({{ stats.most_common.pct }}%){% endif %}</div>
+          </div>
+          <div class="stat-card" style="border-left-color:var(--lumi-blue);">
+            <div class="stat-value" data-countup="{{ stats.total }}">{{ stats.total }}</div>
+            <div class="stat-label">Total analyses</div>
+          </div>
+          <div class="stat-card" style="border-left-color:var(--lumi-success);">
+            <div class="stat-value">{{ stats.avg_confidence if stats.avg_confidence is not none else '-' }}%</div>
+            <div class="stat-label">Average confidence</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:15px;margin-bottom:var(--sp-4);">Subtype distribution</h3>
+        {% set sub_colors = {'BL1':'var(--sub-bl1)','BL2':'var(--sub-bl2)','LAR':'var(--sub-lar)','M':'var(--sub-m)'} %}
+        {% for d in stats.distribution %}
+        <div style="margin-bottom:var(--sp-4);">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+            <span style="font-weight:600;color:var(--lumi-navy);">{{ d.name }} ({{ d.subtype }})</span>
+            <span style="color:var(--lumi-slate);">{{ d.count }} {{ 'patient' if d.count == 1 else 'patients' }} &middot; {{ d.pct }}%</span>
+          </div>
+          <div style="height:10px;background:var(--lumi-blush);border-radius:999px;overflow:hidden;">
+            <div style="height:100%;width:{{ d.pct }}%;background:{{ sub_colors[d.subtype] }};border-radius:999px;transition:width 0.6s ease;"></div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="5" width="3" height="13"></rect></svg>
+          <h3>No analyses yet</h3>
+          <p>Population statistics will appear here once patients have run analyses.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Pending -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 class="card-title mb-0">Pending Requests</h2>
+          <span class="badge badge-warning">{{ pending|length }} waiting</span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if pending %}
+        <div class="table-container">
+          <table class="table">
+            <thead><tr><th>Patient ID</th><th>Subtype</th><th>Requested</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for r in pending %}
+              <tr>
+                <td style="font-weight:600;font-family:monospace;">{{ r.patient_code }}</td>
+                <td><span style="color:var(--lumi-pink);font-weight:600;">{{ r.subtype }}</span></td>
+                <td>{{ r.requested_at[:10] if r.requested_at else '' }}</td>
+                <td><span class="badge badge-warning">Pending</span></td>
+                <td><a href="{{ url_for('review_detail', request_id=r.id) }}" class="btn btn-primary btn-sm">Review</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <h3>All caught up</h3>
+          <p>There are no pending review requests right now. New requests from patients will appear here.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Reviewed -->
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 class="card-title mb-0">Completed Reviews</h2>
+          <span class="badge badge-success">{{ reviewed|length }} done</span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if reviewed %}
+        <div class="table-container">
+          <table class="table">
+            <thead><tr><th>Patient ID</th><th>Subtype</th><th>Reviewed</th><th>By</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for r in reviewed %}
+              <tr>
+                <td style="font-weight:600;font-family:monospace;">{{ r.patient_code }}</td>
+                <td><span style="color:var(--lumi-pink);font-weight:600;">{{ r.subtype }}</span></td>
+                <td>{{ r.reviewed_at[:10] if r.reviewed_at else '' }}</td>
+                <td style="font-size:13px;color:var(--lumi-slate);">{{ r.reviewer_name or '-' }}</td>
+                <td><span class="badge badge-success">Reviewed</span></td>
+                <td><a href="{{ url_for('review_detail', request_id=r.id) }}" style="font-weight:500;">View →</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <h3>No completed reviews yet</h3>
+          <p>Reviews you finish will be listed here for your records.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

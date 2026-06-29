@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LumiTNBC{% endblock %}</title>
+  <script>
+    // Apply saved theme before paint to avoid a flash of light mode.
+    (function () {
+      try {
+        var m = document.cookie.match(/(?:^|; )theme=(dark|light)/);
+        if (m && m[1] === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=20">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+  {% if session.get('role') == 'patient' %}{% include "chatbot_widget.html" %}{% endif %}
+  <script src="{{ url_for('static', filename='js/ui.js') }}?v=1"></script>
+  <script src="{{ url_for('static', filename='js/motion.js') }}?v=2"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
