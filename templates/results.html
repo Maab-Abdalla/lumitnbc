@@ -124,23 +124,32 @@
     <!-- ===== Charts ===== -->
     <section id="sec-charts" class="result-section" data-panel="charts">
       <div class="grid grid-2" style="margin-bottom:var(--sp-6);">
-        <!-- Confidence donut -->
+        <!-- Confidence card -->
         {% if result.probabilities %}
+        {% set conf_label = 'Very High Confidence' if conf >= 90 else ('High Confidence' if conf >= 75 else ('Moderate Confidence' if conf >= 60 else 'Lower Confidence')) %}
         <div class="card">
           <div class="card-header"><h2 class="card-title mb-0">How sure is the model?</h2></div>
-          <div class="card-body" style="text-align:center;">
-            <div style="position:relative;width:240px;height:240px;margin:0 auto;">
-              <canvas id="confidenceDonut"></canvas>
-              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;">
-                <div style="font-size:34px;font-weight:700;color:{{ scolor }};line-height:1;">{{ result.confidence }}%</div>
-                <div style="font-size:12px;color:var(--lumi-slate);">{{ result.subtype }}</div>
-              </div>
+          <div class="card-body">
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--lumi-muted);font-weight:600;margin-bottom:6px;">Prediction</div>
+            <div style="font-size:22px;font-weight:700;color:{{ scolor }};line-height:1.2;margin-bottom:var(--sp-4);">
+              {{ info.get('full_name', result.subtype) }} ({{ result.subtype }})
             </div>
-            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;max-width:320px;margin:var(--sp-4) auto 0;">
+
+            <div style="display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-2);">
+              <span style="font-size:40px;font-weight:700;color:{{ scolor }};line-height:1;">{{ result.confidence }}%</span>
+              <span style="font-size:14px;font-weight:600;color:var(--lumi-slate);">{{ conf_label }}</span>
+            </div>
+
+            <div style="font-size:12px;color:var(--lumi-muted);font-weight:600;margin:var(--sp-4) 0 6px;">Confidence Level</div>
+            <div class="progress" style="height:18px;border-radius:999px;">
+              <div class="progress-bar" style="width:{{ result.confidence }}%;background:{{ scolor }};border-radius:999px;"></div>
+            </div>
+
+            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin-top:var(--sp-4);margin-bottom:0;">
               {% if conf >= 85 %}
-                The AI is highly confident your tumour is the {{ result.subtype }} subtype. The other subtypes were considered but scored much lower.
+                The model is highly confident this tumour belongs to the {{ result.subtype }} subtype. The other subtypes were considered but scored much lower.
               {% elif conf >= 65 %}
-                The AI is reasonably confident in this result. Your care team can confirm with additional tests if needed.
+                The model is reasonably confident in this result. Your care team can confirm with additional tests if needed.
               {% else %}
                 This result is less certain, as the subtypes scored closely. Your care team may recommend further testing to confirm.
               {% endif %}
@@ -149,21 +158,22 @@
         </div>
         {% endif %}
 
-        <!-- What pushed the decision -->
+        <!-- What pushed the decision (diverging bar) -->
         {% if patient_shap_chart %}
         <div class="card">
           <div class="card-header"><h2 class="card-title mb-0">What pushed the decision</h2></div>
           <div class="card-body">
-            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">These are the signals that most strongly pointed toward {{ result.subtype }}.</p>
-            <canvas id="shapBar" height="220"></canvas>
-            <div style="display:flex;gap:var(--sp-4);justify-content:center;margin-top:var(--sp-4);font-size:12px;color:var(--lumi-slate);">
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--lumi-pink);margin-right:5px;"></span>Supports {{ result.subtype }}</span>
-              <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--lumi-blue);margin-right:5px;"></span>Points away</span>
+            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Each signal is placed by how strongly, and in which direction, it pushed the result. Bars to the right pushed toward {{ result.subtype }}; bars to the left pushed away.</p>
+            <div style="height:240px;position:relative;"><canvas id="shapBar"></canvas></div>
+            <div style="display:flex;justify-content:space-between;margin-top:var(--sp-2);font-size:12px;color:var(--lumi-slate);">
+              <span>&larr; Points away</span>
+              <span>Pushes toward {{ result.subtype }} &rarr;</span>
             </div>
           </div>
         </div>
         {% endif %}
       </div>
+      {# end of the two-column grid #}
 
       <!-- How your tumour compares (full width, below) -->
       {% if result.probabilities %}
@@ -194,26 +204,29 @@
         <div class="card-header"><h2 class="card-title mb-0">Why the model decided this</h2></div>
         <div class="card-body">
           {% if result.method in ['xgboost_ml', 'hybrid_ml'] and patient_reasons %}
-            <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-5);">The chart shows the strongest signals at a glance. Below, each one is explained in plain language with the specific gene involved and how strongly it contributed.</p>
+            <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-5);">Each signal below is graded by how strongly it pointed to your result, with the specific gene involved.</p>
+            {% set ns = namespace(supporting=0) %}
             {% for r in patient_reasons %}
-              <div style="display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);background:{% if r.supports %}rgba(196,110,156,0.06){% else %}rgba(94,147,190,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
-                <div style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">{{ loop.index }}</div>
-                <div style="flex:1;">
-                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:4px;">
-                    <p style="font-weight:600;font-size:14px;margin:0;">{{ r.label }}
-                      {% if r.gene %}<span style="font-family:var(--font-mono,monospace);font-size:12px;color:var(--lumi-muted);font-weight:500;">· gene {{ r.gene }}</span>{% endif %}
-                    </p>
-                    <span style="font-size:12px;font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};white-space:nowrap;">
-                      {% if r.supports %}+{% else %}−{% endif %}{{ r.magnitude }} contribution
-                    </span>
-                  </div>
-                  <p style="font-size:13px;color:var(--lumi-slate);margin:0;line-height:1.5;">{{ r.sentence }}
-                    <span style="font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">{% if r.supports %}Pointed toward this subtype.{% else %}Pointed slightly away.{% endif %}</span></p>
+              {% if r.supports %}{% set ns.supporting = ns.supporting + 1 %}{% endif %}
+              <div style="padding:var(--sp-4) var(--sp-5);background:{% if r.supports %}rgba(196,110,156,0.05){% else %}rgba(94,147,190,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:var(--sp-3);">
+                  <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:{% if r.supports %}var(--lumi-success){% else %}var(--lumi-blue){% endif %};flex-shrink:0;"></span>
+                  <span style="font-weight:700;font-size:14px;color:var(--lumi-navy);">{{ r.tier }}</span>
+                  <span style="margin-left:auto;font-size:12px;font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};white-space:nowrap;">{% if r.supports %}+{% else %}−{% endif %}{{ r.magnitude }}</span>
                 </div>
+                <div style="font-size:14px;font-weight:600;color:var(--lumi-navy);margin-bottom:2px;">{{ r.label }}</div>
+                {% if r.gene %}<div style="font-family:var(--font-mono,monospace);font-size:12px;color:var(--lumi-muted);margin-bottom:6px;">Gene: {{ r.gene }}</div>{% endif %}
+                <div style="font-size:13px;color:var(--lumi-slate);line-height:1.5;">{{ r.sentence }}</div>
               </div>
             {% endfor %}
-            <div class="info-panel mt-4">
-              The "contribution" value is the SHAP magnitude: how much that gene's activity moved the model's decision. Higher means a stronger influence. Your care team can walk through these findings with you in detail.
+
+            <!-- Overall explanation -->
+            <div style="padding:var(--sp-4) var(--sp-5);background:var(--lumi-blush-half);border-radius:var(--r-input);margin-top:var(--sp-4);">
+              <div style="font-weight:700;font-size:14px;color:var(--lumi-navy);margin-bottom:6px;">Overall explanation</div>
+              <p style="font-size:13px;color:var(--lumi-slate);line-height:1.6;margin:0;">
+                {% set conflicting = patient_reasons|selectattr('supports','equalto',false)|list|length %}
+                {{ ns.supporting }} signal{{ '' if ns.supporting == 1 else 's' }} supported the {{ result.subtype }} subtype{% if conflicting %}, while {{ conflicting }} weaker signal{{ '' if conflicting == 1 else 's' }} pointed the other way but had little effect on the overall prediction{% endif %}. The "contribution" number next to each item is the SHAP magnitude, how much that gene's activity moved the model's decision. Your care team can walk through these findings with you in detail.
+              </p>
             </div>
           {% elif result.top_reasons %}
             <p style="color:var(--lumi-slate);font-size:14px;margin-bottom:var(--sp-4);">Based on your clinical information, here is what pointed to this subtype:</p>
@@ -634,57 +647,57 @@
 (function () {
   var data = JSON.parse(document.getElementById('chartData').textContent);
 
-  // ── Donut: confidence gauge for the result subtype only ─────────────
+  // Chart instances (resized when their tab opens, since hidden canvases
+  // can't size themselves).
   var _charts = [];
-  var donut = document.getElementById('confidenceDonut');
-  if (donut && window.Chart && data.confidence != null) {
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var trackColor = isDark ? '#2A2230' : '#F1E3EB';
-    var borderCol = isDark ? '#1B2430' : '#ffffff';
-    var conf = Math.max(0, Math.min(100, parseFloat(data.confidence) || 0));
-    var subColor = data.subtypeColors[data.subtype] || '#C46E9C';
-    _charts.push(new Chart(donut, {
-      type: 'doughnut',
-      data: {
-        labels: ['Confidence', 'Remaining'],
-        datasets: [{
-          data: [conf, 100 - conf],
-          backgroundColor: [subColor, trackColor],
-          borderWidth: 2,
-          borderColor: borderCol
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '72%',
-        animation: { duration: 700 },
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: false }
-        }
-      }
-    }));
-  }
 
-  // ── Horizontal bar: what pushed the decision ────────────────────────
+  // ── Diverging bar: what pushed the decision ─────────────────────────
   var bar = document.getElementById('shapBar');
   if (bar && window.Chart && data.shap && data.shap.length) {
+    // Sort so the largest pushes (either direction) read top-to-bottom.
+    var shap = data.shap.slice().sort(function (a, b) {
+      return Math.abs(b.signed) - Math.abs(a.signed);
+    });
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var zeroLine = isDark ? '#3A4654' : '#C9D4DE';
+    // Symmetric axis around zero so the centre line sits in the middle.
+    var maxMag = Math.max.apply(null, shap.map(function (s) { return Math.abs(s.signed); }));
+    maxMag = maxMag > 0 ? maxMag * 1.15 : 1;
     _charts.push(new Chart(bar, {
       type: 'bar',
       data: {
-        labels: data.shap.map(function (s) { return s.label; }),
+        labels: shap.map(function (s) { return s.label; }),
         datasets: [{
-          data: data.shap.map(function (s) { return s.value; }),
-          backgroundColor: data.shap.map(function (s) { return s.supports ? '#C46E9C' : '#5E93BE'; }),
-          borderRadius: 4
+          data: shap.map(function (s) { return s.signed; }),
+          backgroundColor: shap.map(function (s) { return s.supports ? '#C46E9C' : '#5E93BE'; }),
+          borderRadius: 4,
+          barThickness: 18
         }]
       },
       options: {
         indexAxis: 'y',
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (c) {
+                var v = c.parsed.x;
+                return (v >= 0 ? 'Pushed toward (+' : 'Pushed away (') + v.toFixed(3) + ')';
+              }
+            }
+          }
+        },
         scales: {
-          x: { display: false, beginAtZero: true },
+          x: {
+            min: -maxMag, max: maxMag,
+            grid: {
+              color: function (ctx) { return ctx.tick.value === 0 ? zeroLine : 'transparent'; },
+              lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 0; }
+            },
+            ticks: { display: false }
+          },
           y: { ticks: { font: { size: 12 } }, grid: { display: false } }
         }
       }

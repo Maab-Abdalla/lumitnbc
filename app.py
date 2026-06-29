@@ -337,37 +337,61 @@ def gene_label(gene):
 
 
 def build_patient_shap_chart(result):
-    """Top-5 SHAP features as plain-language chart data for the patient view."""
+    """Top-5 SHAP features as plain-language chart data for the patient view.
+    Includes the signed value so the chart can diverge (left = away,
+    right = toward the predicted subtype)."""
     feats = (result or {}).get("shap_features") or []
     chart = []
     for f in feats[:5]:
         label, _ = gene_label(f.get("gene", ""))
+        shap_val = f.get("shap_value", 0)
         chart.append({
             "label": label,
-            "value": round(abs(f.get("shap_value", 0)), 4),
-            "supports": f.get("shap_value", 0) > 0,
+            "value": round(abs(shap_val), 4),
+            "signed": round(shap_val, 4),
+            "supports": shap_val > 0,
         })
     return chart
 
 
 def build_patient_reasons(result):
-    """Top-5 SHAP features as plain-language reason cards for the patient view.
-    Includes gene-level detail (gene symbol + signed contribution) so this
-    section adds information the quick bar chart does not."""
+    """Top-5 SHAP features as plain-language, evidence-tiered reason cards for
+    the patient view. Each carries the gene, signed contribution, and an
+    evidence tier (Strongest / Strong supporting / Supporting / Minor
+    conflicting) derived from rank and direction."""
     feats = (result or {}).get("shap_features") or []
     reasons = []
+    # Separate supporting vs conflicting to tier them sensibly.
+    supporting_rank = 0
     for f in feats[:5]:
         gene = f.get("gene", "")
         label, sentence = gene_label(gene)
         shap_val = f.get("shap_value", 0)
+        supports = shap_val > 0
+        if supports:
+            supporting_rank += 1
+            if supporting_rank == 1:
+                tier = "Strongest evidence"
+            elif supporting_rank == 2:
+                tier = "Strong supporting evidence"
+            else:
+                tier = "Supporting evidence"
+        else:
+            tier = "Minor conflicting evidence"
         reasons.append({
             "label": label,
             "sentence": sentence,
             "gene": gene,
             "value": round(shap_val, 4),
             "magnitude": round(abs(shap_val), 4),
-            "supports": shap_val > 0,
+            "supports": supports,
+            "tier": tier,
         })
+    # Present in tier order (supporting first, strongest at top), so the
+    # conflicting items sit at the bottom regardless of raw magnitude.
+    tier_order = {"Strongest evidence": 0, "Strong supporting evidence": 1,
+                  "Supporting evidence": 2, "Minor conflicting evidence": 3}
+    reasons.sort(key=lambda r: (tier_order.get(r["tier"], 9), -r["magnitude"]))
     return reasons
 
 
