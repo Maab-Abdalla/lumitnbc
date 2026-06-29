@@ -163,6 +163,17 @@ def youtube_watch_url(video_id):
     return f"https://www.youtube.com/watch?v={video_id}"
 
 
+def favicon_url(page_url, size=128):
+    """Brand favicon for a resource link, via Google's favicon service.
+    Derives the domain from the link's own URL, so nothing extra to maintain."""
+    try:
+        from urllib.parse import urlparse
+        domain = urlparse(page_url).netloc or page_url
+    except Exception:
+        domain = page_url
+    return f"https://www.google.com/s2/favicons?domain={domain}&sz={size}"
+
+
 # Add entries here. Each: {"id": "<youtube_video_id>", "title": "...",
 # "source": "...", "desc": "..."}. The id is the part after v= in the URL.
 RESOURCE_VIDEOS = [
@@ -384,6 +395,7 @@ def _register_routes(app):
                                resource_videos=RESOURCE_VIDEOS,
                                youtube_thumb=youtube_thumb,
                                youtube_watch_url=youtube_watch_url,
+                               favicon_url=favicon_url,
                                subtype_faqs=SUBTYPE_FAQS,
                                general_faqs=GENERAL_FAQS)
 

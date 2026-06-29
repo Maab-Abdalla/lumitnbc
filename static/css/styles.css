@@ -848,3 +848,26 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
   transform: translate(-50%, -50%) scale(1.08);
   background: var(--lumi-pink);
 }
+
+/* Resource card favicon header */
+.resource-favicon {
+  height: 110px;
+  border-radius: var(--r-input) var(--r-input) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.resource-favicon img {
+  width: 56px; height: 56px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(17,53,90,0.10);
+  object-fit: contain;
+}
+.resource-favicon-fallback {
+  width: 56px; height: 56px;
+  align-items: center; justify-content: center;
+  background: #fff; border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(17,53,90,0.10);
+}
