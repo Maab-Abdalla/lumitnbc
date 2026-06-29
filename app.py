@@ -769,6 +769,16 @@ def _register_routes(app):
         if result.get("enabled") and result.get("reply"):
             return jsonify({"reply": result["reply"], "source": "llm"})
 
+        # Log WHY we fell back so it's visible in the deploy logs. This prints
+        # the reason (no key / package missing / OpenAI error) but never the key.
+        if not chatbot_llm.is_enabled():
+            app.logger.warning("[chat] LLM disabled: OPENAI_API_KEY not set in this environment.")
+        elif result.get("error"):
+            app.logger.warning("[chat] LLM call failed, using keyword fallback. Reason: %s",
+                               result["error"])
+        else:
+            app.logger.warning("[chat] LLM returned no reply; using keyword fallback.")
+
         # Fallback: offline keyword responder (no API key or LLM unavailable).
         return jsonify({"reply": _keyword_fallback(message), "source": "keyword"})
 
