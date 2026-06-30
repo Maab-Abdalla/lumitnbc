@@ -25,7 +25,7 @@ from flask import (
 from flask_sqlalchemy import SQLAlchemy
 
 from config import config
-from models_db import db, User, Analysis, ReviewRequest, patient_code
+from models_db import db, User, Analysis, ReviewRequest, patient_code, ActivityLog
 from ml_pipeline import (
     load_assets, get_gene_list, get_classes,
     parse_gene_file, classify_gene_only, classify_hybrid,
@@ -55,23 +55,27 @@ def create_app(config_name="default"):
         db.create_all()
         _seed_demo_users()
         load_assets()
+        _seed_population()
 
     _register_routes(app)
     return app
 
 
 def _seed_demo_users():
-    """Ensure the demo accounts exist. Seeds each one individually if missing,
-    so the admin/provider are always present even after patients have
-    registered (avoids the all-or-nothing 'count==0' gap)."""
+    """Ensure the demo + admin accounts exist. Seeds each individually if
+    missing. The patient and provider are public demo logins; the admin is a
+    system account (not advertised on the login page) whose credentials can be
+    overridden via ADMIN_EMAIL / ADMIN_PASSWORD env vars."""
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@lumitnbc.com")
+    admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
     demos = [
         dict(email="sarah@email.com", name="Sarah Johnson", role="patient",
              phone="+60 123456789", diagnosis_date="December 2024",
              cancer_stage="Stage IIA", password="password123"),
         dict(email="dr.brown@hospital.com", name="Dr. M. Brown", role="provider",
              password="password123"),
-        dict(email="admin@lumitnbc.com", name="System Admin", role="admin",
-             password="admin123"),
+        dict(email=admin_email, name="System Admin", role="admin",
+             password=admin_password),
     ]
     created = []
     for d in demos:
@@ -84,7 +88,85 @@ def _seed_demo_users():
         created.append(d["email"])
     if created:
         db.session.commit()
-        print(f"[seed] Created demo accounts: {', '.join(created)}")
+        print(f"[seed] Created accounts: {', '.join(created)}")
+
+
+# Demo patients for the seeded population (illustrative, not real people).
+_DEMO_PATIENTS = [
+    ("Aisha Rahman", "aisha.demo@example.com"),
+    ("Mei Ling Tan", "mei.demo@example.com"),
+    ("Priya Nair", "priya.demo@example.com"),
+    ("Fatimah Yusof", "fatimah.demo@example.com"),
+    ("Grace Lim", "grace.demo@example.com"),
+    ("Nadia Hassan", "nadia.demo@example.com"),
+]
+
+
+def _seed_population(min_analyses=10):
+    """Seed a realistic population of analyses so the provider's Population
+    Insights are populated. Subtypes and confidences are REAL model outputs
+    (the actual model is run on the reference samples); only the volume and
+    the spread are seeded. The spread (BL1 & M most common, LAR least) is
+    illustrative, reflecting literature-typical TNBC subtype proportions, not
+    real patient data."""
+    import uuid as _uuid
+    from datetime import timedelta
+    from ml_pipeline import parse_gene_file, classify_gene_only
+
+    if Analysis.query.count() >= min_analyses:
+        return  # already populated
+
+    # Ensure demo patient accounts exist.
+    patients = []
+    for name, email in _DEMO_PATIENTS:
+        u = User.query.filter_by(email=email).first()
+        if not u:
+            u = User(email=email, name=name, role="patient",
+                     cancer_type="Triple-Negative Breast Cancer")
+            u.set_password("demo-seed-" + _uuid.uuid4().hex[:8])
+            db.session.add(u)
+        patients.append(u)
+    db.session.commit()
+
+    # Literature-typical-ish spread across 24 analyses.
+    plan = (["bl1"] * 8) + (["m"] * 7) + (["bl2"] * 6) + (["lar"] * 3)
+
+    test_dir = os.path.join(os.path.dirname(__file__), "test_data")
+    sample_cache = {}
+    created = 0
+    for i, sub in enumerate(plan):
+        fname = f"tcga_single_{sub}.csv"
+        fpath = os.path.join(test_dir, fname)
+        if not os.path.exists(fpath):
+            continue
+        if sub not in sample_cache:
+            with open(fpath, "rb") as f:
+                sample_cache[sub] = f.read()
+        try:
+            df = parse_gene_file(sample_cache[sub], fname)
+            result = classify_gene_only(df)
+        except Exception:
+            continue
+        patient = patients[i % len(patients)]
+        storable = {k: v for k, v in result.items() if k not in ("subtype_info",)}
+        a = Analysis(
+            analysis_id="seed-" + _uuid.uuid4().hex[:12],
+            user_id=patient.id,
+            subtype=result.get("subtype"),
+            confidence=result.get("confidence"),
+            method=result.get("method"),
+            input_mode=result.get("input_mode", "gene_only"),
+            filename=fname,
+            result_json=json.dumps(storable, default=str),
+        )
+        # Spread created_at over the past ~30 days for a realistic timeline.
+        a.created_at = datetime.utcnow() - timedelta(days=(len(plan) - i),
+                                                     hours=(i * 7) % 24)
+        db.session.add(a)
+        created += 1
+    if created:
+        db.session.commit()
+        print(f"[seed] Created {created} demo analyses for Population Insights.")
 
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
@@ -582,9 +664,10 @@ def _register_routes(app):
         return jsonify({"requested": True, **req.to_dict(include_name=True)})
 
     @app.route("/api/review/<int:request_id>/submit", methods=["POST"])
-    @role_required("provider", "admin")
+    @role_required("provider")
     def api_review_submit(request_id):
-        """Provider submits free-text feedback, completing the review."""
+        """Provider submits free-text feedback, completing the review.
+        Admins have read-only oversight and cannot submit clinical reviews."""
         user = current_user()
         req = ReviewRequest.query.get_or_404(request_id)
         data = request.get_json(silent=True) or {}
@@ -621,6 +704,24 @@ def _register_routes(app):
                                users=[u.to_dict() for u in users],
                                analyses=[a.to_dict() for a in analyses],
                                stats=stats)
+
+    # ── Update ML models (admin use case): view metadata + validate ─────
+    @app.route("/api/admin/model/info")
+    @role_required("admin")
+    def api_admin_model_info():
+        """Real metadata about the currently loaded model."""
+        import ml_pipeline
+        return jsonify(ml_pipeline.model_info())
+
+    @app.route("/api/admin/model/validate", methods=["POST"])
+    @role_required("admin")
+    def api_admin_model_validate():
+        """Validate the loaded model against the expected contract."""
+        import ml_pipeline
+        report = ml_pipeline.validate_model()
+        _log_activity("admin_model_validate",
+                      f"valid={report['valid']}", actor=current_user().email)
+        return jsonify(report)
 
     # ── API: Auth ─────────────────────────────────────────────────────────────
 
@@ -914,10 +1015,66 @@ def _register_routes(app):
         n_reviews = ReviewRequest.query.delete()
         n_analyses = Analysis.query.delete()
         db.session.commit()
+        _log_activity("admin_clear_data",
+                      f"Cleared {n_analyses} analyses, {n_reviews} reviews")
         return jsonify({
             "success": True,
             "message": f"Cleared {n_analyses} analyses and {n_reviews} review requests.",
         })
+
+    # ── Manage Users Accounts (admin use case) ──────────────────────────
+    @app.route("/api/admin/users/<int:user_id>/role", methods=["POST"])
+    @role_required("admin")
+    def api_admin_set_role(user_id):
+        """Change a user's role. Guards: an admin can't change their own role,
+        and the last remaining admin can't be demoted (avoids lock-out)."""
+        me = current_user()
+        target = User.query.get_or_404(user_id)
+        data = request.get_json(silent=True) or {}
+        new_role = (data.get("role") or "").strip().lower()
+        if new_role not in ("patient", "provider", "admin"):
+            return jsonify({"success": False, "message": "Invalid role."}), 400
+        if target.id == me.id:
+            return jsonify({"success": False,
+                            "message": "You can't change your own role."}), 400
+        if target.role == "admin" and new_role != "admin":
+            admin_count = User.query.filter_by(role="admin").count()
+            if admin_count <= 1:
+                return jsonify({"success": False,
+                                "message": "Can't demote the last admin."}), 400
+        old_role = target.role
+        target.role = new_role
+        db.session.commit()
+        _log_activity("admin_role_change",
+                      f"{target.email}: {old_role} -> {new_role}", actor=me.email)
+        return jsonify({"success": True,
+                        "message": f"{target.name} is now {new_role}."})
+
+    @app.route("/api/admin/users/<int:user_id>", methods=["DELETE"])
+    @role_required("admin")
+    def api_admin_delete_user(user_id):
+        """Delete a user account and their analyses/reviews. Guards: can't
+        delete yourself, can't delete the last admin."""
+        me = current_user()
+        target = User.query.get_or_404(user_id)
+        if target.id == me.id:
+            return jsonify({"success": False,
+                            "message": "You can't delete your own account."}), 400
+        if target.role == "admin" and User.query.filter_by(role="admin").count() <= 1:
+            return jsonify({"success": False,
+                            "message": "Can't delete the last admin."}), 400
+        # Remove dependent records first (reviews requested by/assigned to them,
+        # then their analyses), then the user.
+        analyses = Analysis.query.filter_by(user_id=target.id).all()
+        for a in analyses:
+            ReviewRequest.query.filter_by(analysis_id=a.id).delete()
+        ReviewRequest.query.filter_by(reviewer_id=target.id).update({"reviewer_id": None})
+        Analysis.query.filter_by(user_id=target.id).delete()
+        email = target.email
+        db.session.delete(target)
+        db.session.commit()
+        _log_activity("admin_delete_user", f"Deleted {email}", actor=me.email)
+        return jsonify({"success": True, "message": f"Deleted {email}."})
 
     @app.errorhandler(403)
     def forbidden(e):
@@ -932,6 +1089,18 @@ def _register_routes(app):
 
 def _generate_analysis_id():
     return f"LT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+
+
+def _log_activity(event, detail="", actor=None):
+    """Record an app-activity event. Best-effort: never breaks the request if
+    logging fails (e.g. during early setup before tables exist)."""
+    try:
+        entry = ActivityLog(event=event, detail=detail[:500] if detail else "",
+                            actor=actor)
+        db.session.add(entry)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def _keyword_fallback(message: str) -> str:

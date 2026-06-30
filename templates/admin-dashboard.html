@@ -29,23 +29,55 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><h2 class="card-title mb-0">Registered Users</h2></div>
+        <div class="card-header"><h2 class="card-title mb-0">Manage Users</h2></div>
         <div class="card-body">
+          <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Change a user's role or remove their account. Your own account is protected, and the last admin can't be removed.</p>
           <div class="table-container">
             <table class="table">
-              <thead><tr><th>User</th><th>Role</th><th>Status</th></tr></thead>
+              <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
               <tbody>
                 {% for u in users %}
-                <tr>
-                  <td style="font-weight:500;">{{ u.name }}</td>
-                  <td><span class="badge badge-{% if u.role=='provider' %}info{% elif u.role=='admin' %}warning{% else %}primary{% endif %}">{{ u.role|capitalize }}</span></td>
-                  <td><span class="badge badge-success">Active</span></td>
+                <tr data-user-id="{{ u.id }}">
+                  <td style="font-weight:500;">{{ u.name }}{% if u.id == user.id %} <span class="badge badge-warning" style="font-size:10px;">You</span>{% endif %}</td>
+                  <td style="font-size:13px;color:var(--lumi-slate);">{{ u.email }}</td>
+                  <td>
+                    {% if u.id == user.id %}
+                      <span class="badge badge-warning">{{ u.role|capitalize }}</span>
+                    {% else %}
+                      <select class="form-input" style="padding:4px 8px;font-size:13px;width:auto;" onchange="changeRole({{ u.id }}, this.value, this)">
+                        <option value="patient" {% if u.role=='patient' %}selected{% endif %}>Patient</option>
+                        <option value="provider" {% if u.role=='provider' %}selected{% endif %}>Provider</option>
+                        <option value="admin" {% if u.role=='admin' %}selected{% endif %}>Admin</option>
+                      </select>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if u.id == user.id %}
+                      <span style="font-size:12px;color:var(--lumi-muted);">&mdash;</span>
+                    {% else %}
+                      <button class="btn btn-outline btn-sm" style="color:var(--lumi-danger,#C0392B);border-color:var(--lumi-danger,#C0392B);" onclick="deleteUser({{ u.id }}, '{{ u.name|e }}')">Delete</button>
+                    {% endif %}
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ML Model -->
+    <div class="card mt-6 reveal">
+      <div class="card-header"><h2 class="card-title mb-0">ML Model</h2></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">The classification model currently loaded. The file hash lets you verify exactly which model is live. Validation checks the model against the expected contract (163 features, 4 subtypes) and runs the known reference samples.</p>
+        <div id="model-info" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4);">
+          <div style="font-size:13px;color:var(--lumi-muted);">Loading model details…</div>
+        </div>
+        <button onclick="validateModel()" class="btn btn-outline" id="validate-btn">Validate model</button>
+        <div id="validate-result" style="margin-top:var(--sp-4);"></div>
+        <p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-4);margin-bottom:0;">To update the model, commit a new model file to the repository and redeploy; the new model loads on startup.</p>
       </div>
     </div>
 
@@ -60,6 +92,82 @@
   </div>
 </main>
 <script>
+// Load model metadata on page load
+(async function loadModelInfo() {
+  try {
+    var r = await fetch('/api/admin/model/info');
+    var d = await r.json();
+    var rows = [
+      ['Type', d.model_type || 'Not loaded'],
+      ['Subtypes', (d.classes || []).join(', ') + ' (' + d.n_classes + ')'],
+      ['Features', d.n_features + ' (' + d.n_gene_features + ' genes + ' + d.n_clinical_features + ' clinical)'],
+      ['SHAP explainer', d.shap_ready ? 'Ready' : 'Not built'],
+      ['Model file', d.model_file + (d.model_size_kb ? ' (' + d.model_size_kb + ' KB)' : '')],
+      ['File hash (SHA-256)', d.model_hash ? d.model_hash.slice(0, 24) + '…' : 'n/a']
+    ];
+    var html = rows.map(function (row) {
+      return '<div style="padding:var(--sp-3);background:var(--lumi-background,#F7F9FB);border-radius:var(--r-input);">' +
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:var(--lumi-muted);font-weight:600;margin-bottom:3px;">' + row[0] + '</div>' +
+        '<div style="font-size:13px;color:var(--lumi-navy);font-weight:500;word-break:break-all;">' + row[1] + '</div></div>';
+    }).join('');
+    document.getElementById('model-info').innerHTML = html;
+  } catch (e) {
+    document.getElementById('model-info').innerHTML = '<div style="font-size:13px;color:var(--lumi-danger,#C0392B);">Could not load model details.</div>';
+  }
+})();
+
+async function validateModel() {
+  var btn = document.getElementById('validate-btn');
+  var box = document.getElementById('validate-result');
+  btn.disabled = true; btn.textContent = 'Validating…';
+  box.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/model/validate', {method: 'POST'});
+    var d = await r.json();
+    var items = (d.checks || []).map(function (c) {
+      var color = c.ok ? 'var(--lumi-success)' : 'var(--lumi-danger,#C0392B)';
+      var mark = c.ok ? '✓' : '✕';
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;">' +
+        '<span style="color:' + color + ';font-weight:700;">' + mark + '</span>' +
+        '<span style="color:var(--lumi-navy);">' + c.name + (c.detail ? ' <span style="color:var(--lumi-muted);">— ' + c.detail + '</span>' : '') + '</span></div>';
+    }).join('');
+    var banner = '<div style="padding:var(--sp-3) var(--sp-4);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-weight:600;font-size:14px;background:' +
+      (d.valid ? 'rgba(44,156,132,0.12);color:var(--lumi-success);' : 'rgba(192,57,43,0.10);color:var(--lumi-danger,#C0392B);') + '">' +
+      (d.valid ? 'Model passed all checks.' : 'Model failed one or more checks.') + '</div>';
+    box.innerHTML = banner + items;
+  } catch (e) {
+    box.innerHTML = '<div style="font-size:13px;color:var(--lumi-danger,#C0392B);">Validation request failed.</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Validate model';
+}
+
+async function changeRole(userId, newRole, selectEl) {
+  var prev = selectEl.getAttribute('data-prev') || selectEl.value;
+  try {
+    var r = await fetch('/api/admin/users/' + userId + '/role', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: newRole})
+    });
+    var d = await r.json();
+    if (d.success) { showToast(d.message || 'Role updated.', 'success'); selectEl.setAttribute('data-prev', newRole); }
+    else { showToast(d.message || 'Could not change role.', 'error'); if (prev) selectEl.value = prev; }
+  } catch (e) { showToast('Network error. Please try again.', 'error'); if (prev) selectEl.value = prev; }
+}
+
+async function deleteUser(userId, name) {
+  if (!confirm('Delete the account for ' + name + '? Their analyses and review requests will also be removed. This cannot be undone.')) return;
+  try {
+    var r = await fetch('/api/admin/users/' + userId, {method: 'DELETE'});
+    var d = await r.json();
+    if (d.success) {
+      showToast(d.message || 'User deleted.', 'success');
+      var row = document.querySelector('tr[data-user-id="' + userId + '"]');
+      if (row) row.remove();
+    } else showToast(d.message || 'Could not delete user.', 'error');
+  } catch (e) { showToast('Network error. Please try again.', 'error'); }
+}
+
 async function clearDemoData() {
   if (!confirm('Delete all analyses and review requests? User accounts are kept. This cannot be undone.')) return;
   try {

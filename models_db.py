@@ -43,6 +43,7 @@ class User(db.Model):
             "diagnosis_date": self.diagnosis_date,
             "cancer_type": self.cancer_type,
             "cancer_stage": self.cancer_stage,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -138,3 +139,24 @@ class ReviewRequest(db.Model):
         if include_name and self.patient:
             d["patient_name"] = self.patient.name
         return d
+
+class ActivityLog(db.Model):
+    """Application-level activity log for the admin 'View System Logs' use case.
+    Records real app events (logins, analyses, reviews, admin actions, model
+    reloads). This is app-activity, not server/infra logs."""
+    __tablename__ = "activity_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    event = db.Column(db.String(50), nullable=False, index=True)
+    detail = db.Column(db.String(500))
+    actor = db.Column(db.String(255))  # email of who triggered it, if known
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "time": self.created_at.isoformat() if self.created_at else None,
+            "event": self.event,
+            "detail": self.detail,
+            "actor": self.actor,
+        }

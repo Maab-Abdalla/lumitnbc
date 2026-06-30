@@ -91,6 +91,112 @@ def get_classes():
     return ["BL1", "BL2", "LAR", "M"]
 
 
+def _file_hash(path):
+    """Short SHA-256 of a file, so the admin can verify which model is loaded."""
+    import hashlib
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except Exception:
+        return None
+
+
+def model_info():
+    """Real metadata about the currently loaded model, for the admin
+    'Update ML models' panel. Reports what is actually in memory and on disk;
+    no fabricated values."""
+    model_path = os.path.join(MODEL_DIR, "hybrid_model.joblib")
+    le_path = os.path.join(MODEL_DIR, "label_encoder.joblib")
+    info = {
+        "loaded": _model is not None,
+        "model_type": type(_model).__name__ if _model is not None else None,
+        "classes": get_classes(),
+        "n_classes": len(get_classes()),
+        "n_features": len(_all_features),
+        "n_gene_features": len(_gene_features),
+        "n_clinical_features": len(_clinical_features),
+        "shap_ready": _shap_explainer is not None,
+        "model_file": "hybrid_model.joblib",
+        "model_hash": _file_hash(model_path),
+        "encoder_hash": _file_hash(le_path),
+        "model_file_exists": os.path.exists(model_path),
+    }
+    # File size + modified time (real, from disk)
+    try:
+        st = os.stat(model_path)
+        info["model_size_kb"] = round(st.st_size / 1024, 1)
+        from datetime import datetime
+        info["model_modified"] = datetime.utcfromtimestamp(st.st_mtime).isoformat()
+    except Exception:
+        info["model_size_kb"] = None
+        info["model_modified"] = None
+    return info
+
+
+# Expected contract for this deployment (what a valid model must satisfy).
+EXPECTED_N_FEATURES = 163
+EXPECTED_CLASSES = ["BL1", "BL2", "LAR", "M"]
+
+
+def validate_model():
+    """Validate the loaded model against the expected contract: it loads, has
+    the right feature count and classes, and predicts the four known reference
+    samples correctly. Returns a structured report (real checks, no fakes)."""
+    checks = []
+
+    def add(name, ok, detail=""):
+        checks.append({"name": name, "ok": bool(ok), "detail": detail})
+
+    # 1. Model loaded
+    add("Model loaded into memory", _model is not None,
+        "" if _model is not None else "Model file failed to load.")
+
+    # 2. Feature count
+    add(f"Feature count = {EXPECTED_N_FEATURES}",
+        len(_all_features) == EXPECTED_N_FEATURES,
+        f"Found {len(_all_features)} features.")
+
+    # 3. Classes match
+    add("Classes = BL1, BL2, LAR, M",
+        sorted(get_classes()) == sorted(EXPECTED_CLASSES),
+        f"Found {get_classes()}.")
+
+    # 4. SHAP explainer ready
+    add("SHAP explainer ready", _shap_explainer is not None,
+        "" if _shap_explainer is not None else "Explainer not built.")
+
+    # 5. Reference-sample predictions (only if model loaded)
+    if _model is not None:
+        test_dir = os.path.join(os.path.dirname(__file__), "test_data")
+        expected = {"tcga_single_bl1.csv": "BL1", "tcga_single_bl2.csv": "BL2",
+                    "tcga_single_lar.csv": "LAR", "tcga_single_m.csv": "M"}
+        correct = 0
+        total = 0
+        for fname, exp_sub in expected.items():
+            fpath = os.path.join(test_dir, fname)
+            if not os.path.exists(fpath):
+                continue
+            total += 1
+            try:
+                with open(fpath, "rb") as f:
+                    df = parse_gene_file(f.read(), fname)
+                res = classify_gene_only(df)
+                if res.get("subtype") == exp_sub:
+                    correct += 1
+            except Exception:
+                pass
+        if total:
+            add(f"Reference samples predicted correctly ({correct}/{total})",
+                correct == total,
+                f"{correct} of {total} known samples matched their subtype.")
+
+    passed = all(c["ok"] for c in checks)
+    return {"valid": passed, "checks": checks}
+
+
 # ── Input parsing ─────────────────────────────────────────────────────────────
 
 def parse_gene_file(file_bytes: bytes, filename: str) -> pd.DataFrame:
