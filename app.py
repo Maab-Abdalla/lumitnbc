@@ -595,7 +595,7 @@ def _register_routes(app):
                                reviews_done=reviews_done)
 
     @app.route("/provider-dashboard")
-    @role_required("provider", "admin")
+    @role_required("provider")
     def provider_dashboard():
         user = current_user()
         # Shared queue: every provider sees all review requests. Patient names
@@ -615,7 +615,7 @@ def _register_routes(app):
                                stats=_population_stats())
 
     @app.route("/review/<int:request_id>")
-    @role_required("provider", "admin")
+    @role_required("provider")
     def review_detail(request_id):
         user = current_user()
         req = ReviewRequest.query.get_or_404(request_id)

@@ -600,6 +600,15 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
 .feature-card h3 { font-size: 17px; margin-bottom: var(--sp-2); color: var(--lumi-navy); }
 .feature-card p  { font-size: 14px; color: var(--lumi-slate); line-height: 1.55; margin-bottom: 0; }
 
+/* Landing index cards: visible pink border, wider padding (screenshot ref) */
+.index-card {
+  border: 1.5px solid var(--lumi-pink-soft);
+  border-radius: var(--r-feat);
+  padding: 28px var(--sp-6) var(--sp-6);
+}
+.index-card:hover { border-color: var(--lumi-pink); }
+:root[data-theme="dark"] .index-card { border-color: rgba(232,124,187,0.35); }
+
 /* Hero logo gentle float on load */
 .hero-logo { animation: floatIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
 

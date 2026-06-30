@@ -91,8 +91,8 @@
         {% endif %}
       </div>
     </div>
-    {% else %}
-    <!-- Provider/admin review activity -->
+    {% elif user.get('role') == 'provider' %}
+    <!-- Provider review activity -->
     <div class="card">
       <div class="card-header"><h2 class="card-title mb-0">Review Activity</h2></div>
       <div class="card-body" style="text-align:center;padding:var(--sp-8);">

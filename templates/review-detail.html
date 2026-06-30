@@ -95,8 +95,6 @@
         {% if review.status == 'reviewed' %}
           <div style="padding:var(--sp-4);background:var(--lumi-blush-half);border-radius:var(--r-input);font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ review.review_text }}</div>
           <p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-3);">Submitted {{ review.reviewed_at[:16].replace('T',' ') if review.reviewed_at else '' }}{% if review.reviewer_name %} by {{ review.reviewer_name }}{% endif %}. This has been sent to the patient.</p>
-        {% elif user.role == 'admin' %}
-          <div class="info-panel" style="font-size:13px;">You are viewing this as an administrator (read-only oversight). Clinical reviews are written and submitted by healthcare providers.</div>
         {% else %}
           <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Write feedback for the patient in plain, supportive language. They will see this on their results page. Avoid identifying information.</p>
           <div id="review-msg" style="display:none;padding:var(--sp-3);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-size:13px;"></div>
