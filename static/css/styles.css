@@ -183,6 +183,22 @@ a:hover { opacity: 0.88; }
 /* Small (badges/pills) */
 .btn-sm { padding: 8px 20px; font-size: 14px; }
 
+/* Review helper snippet chips */
+.snippet-chip {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--lumi-pink);
+  background: var(--lumi-white);
+  border: 1px solid var(--lumi-pink-soft);
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.snippet-chip:hover { background: var(--lumi-pink); color: var(--lumi-white); border-color: var(--lumi-pink); }
+:root[data-theme="dark"] .snippet-chip { background: transparent; }
+
 @media (max-width: 720px) {
   .btn-lg { width: 100%; }
 }

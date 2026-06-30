@@ -98,7 +98,29 @@
         {% else %}
           <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Write feedback for the patient in plain, supportive language. They will see this on their results page. Avoid identifying information.</p>
           <div id="review-msg" style="display:none;padding:var(--sp-3);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-size:13px;"></div>
-          <textarea id="review-text" class="form-input" rows="7" placeholder="e.g. I've reviewed your classification and the result is consistent with the molecular markers shown. I'd suggest discussing the following with your oncology team..." style="resize:vertical;margin-bottom:var(--sp-4);"></textarea>
+
+          <!-- Review helpers: a starting structure + quick phrases. Everything is editable before you submit. -->
+          <div style="background:var(--lumi-blush-half);border:1px solid rgba(196,110,156,0.12);border-radius:var(--r-input);padding:var(--sp-4);margin-bottom:var(--sp-4);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-3);">
+              <span style="font-size:13px;font-weight:600;color:var(--lumi-navy);">Need a starting point?</span>
+              <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;">
+                <button type="button" onclick="insertTemplate()" class="btn btn-outline btn-sm">Insert template</button>
+                <button type="button" onclick="clearReview()" class="btn btn-outline btn-sm">Clear</button>
+              </div>
+            </div>
+            <p style="font-size:12px;color:var(--lumi-muted);margin-bottom:var(--sp-3);">Click a phrase to add it. You can edit or remove anything afterwards.</p>
+            <div style="display:flex;gap:var(--sp-2);flex-wrap:wrap;">
+              <button type="button" class="snippet-chip" onclick="insertSnippet('opening')">Opening</button>
+              <button type="button" class="snippet-chip" onclick="insertSnippet('consistent')">Result looks consistent</button>
+              <button type="button" class="snippet-chip" onclick="insertSnippet('caution')">Interpret with caution</button>
+              <button type="button" class="snippet-chip" onclick="insertSnippet('discuss')">Discuss with care team</button>
+              <button type="button" class="snippet-chip" onclick="insertSnippet('questions')">Questions to raise</button>
+              <button type="button" class="snippet-chip" onclick="insertSnippet('reassure')">Reassurance</button>
+              <button type="button" class="snippet-chip" onclick="insertSnippet('closing')">Closing</button>
+            </div>
+          </div>
+
+          <textarea id="review-text" class="form-input" rows="9" placeholder="e.g. I've reviewed your classification and the result is consistent with the molecular markers shown. I'd suggest discussing the following with your oncology team..." style="resize:vertical;margin-bottom:var(--sp-4);"></textarea>
           <button onclick="submitReview()" class="btn btn-primary">Submit Review to Patient</button>
         {% endif %}
       </div>
@@ -109,6 +131,61 @@
 
 {% if review.status != 'reviewed' %}
 <script>
+// ---- Review helpers: structure + quick phrases, all editable before submit ----
+var REVIEW_TEMPLATE = [
+  "Assessment:",
+  "",
+  "What this means for you:",
+  "",
+  "Suggested next steps:",
+  "",
+  "Questions to raise with your care team:",
+  ""
+].join("\n");
+
+var SNIPPETS = {
+  opening:    "I've reviewed your classification and wanted to share some context.",
+  consistent: "The predicted subtype appears consistent with the molecular markers shown in your analysis.",
+  caution:    "This result is one input to consider and should be interpreted alongside your full clinical picture.",
+  discuss:    "I'd suggest discussing these results with your oncology team to plan next steps together.",
+  questions:  "Some questions you might raise: how this subtype informs treatment options, and whether further testing is recommended.",
+  reassure:   "It's understandable to have questions about a result like this. Your care team can talk through what it means for you.",
+  closing:    "Please reach out to your care team with any questions. Wishing you all the best."
+};
+
+function reviewBox() { return document.getElementById('review-text'); }
+
+function insertTemplate() {
+  var box = reviewBox();
+  if (box.value.trim() && !confirm('Replace the current text with the template?')) return;
+  box.value = REVIEW_TEMPLATE;
+  box.focus();
+  // place cursor after the first heading
+  var pos = REVIEW_TEMPLATE.indexOf("\n") + 1;
+  box.setSelectionRange(pos, pos);
+}
+
+function insertSnippet(key) {
+  var box = reviewBox();
+  var text = SNIPPETS[key];
+  if (!text) return;
+  var cur = box.value;
+  if (cur && !/\n\n$/.test(cur)) {
+    cur = cur.replace(/\s*$/, '') + (cur.trim() ? "\n\n" : "");
+  }
+  box.value = cur + text + "\n\n";
+  box.focus();
+  box.setSelectionRange(box.value.length, box.value.length);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearReview() {
+  var box = reviewBox();
+  if (box.value.trim() && !confirm('Clear all text?')) return;
+  box.value = '';
+  box.focus();
+}
+
 async function submitReview() {
   var text = document.getElementById('review-text').value.trim();
   if (text.length < 10) { showToast('Please write at least a sentence of feedback.', 'error'); return; }
