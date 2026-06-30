@@ -2,7 +2,7 @@
 <header class="header">
   <div class="header-content">
     <div class="header-logo" style="display:flex;align-items:center;gap:var(--sp-3);">
-      <a href="{{ url_for('index') }}">
+      <a href="{{ url_for('home') if session.get('user_id') else url_for('index') }}">
         <img src="{{ url_for('static', filename='images/lumiTNBC-logo.png') }}" alt="LumiTNBC">
       </a>
       {% if session.get('role') == 'provider' %}
@@ -17,12 +17,15 @@
         <a href="{{ url_for('classification') }}" class="nav-link {% if active_page=='classification' %}active{% endif %}">New Analysis</a>
         <a href="{{ url_for('results') }}" class="nav-link {% if active_page=='results' %}active{% endif %}">Results</a>
         <a href="{{ url_for('resources') }}" class="nav-link {% if active_page=='resources' %}active{% endif %}">Resources</a>
+        <a href="{{ url_for('about') }}" class="nav-link {% if active_page=='about' %}active{% endif %}">About Us</a>
         <a href="{{ url_for('profile') }}" class="nav-link {% if active_page=='profile' %}active{% endif %}">Profile</a>
       {% elif session.get('role') == 'provider' %}
         <a href="{{ url_for('provider_dashboard') }}" class="nav-link {% if active_page=='provider' %}active{% endif %}">Review Queue</a>
+        <a href="{{ url_for('about') }}" class="nav-link {% if active_page=='about' %}active{% endif %}">About Us</a>
         <a href="{{ url_for('profile') }}" class="nav-link {% if active_page=='profile' %}active{% endif %}">Profile</a>
       {% elif session.get('role') == 'admin' %}
         <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if active_page=='admin' %}active{% endif %}">Dashboard</a>
+        <a href="{{ url_for('about') }}" class="nav-link {% if active_page=='about' %}active{% endif %}">About Us</a>
         <a href="{{ url_for('profile') }}" class="nav-link {% if active_page=='profile' %}active{% endif %}">Profile</a>
       {% endif %}
     </nav>

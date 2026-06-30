@@ -50,6 +50,8 @@
   --shadow-nav:     0 1px 0 rgba(196,110,156,0.08);
   --shadow-focus:   0 0 0 2px rgba(196,110,156,0.15);
   --shadow-chatbot: 0 8px 32px rgba(17,53,90,0.15);
+  --shadow-card:      0 2px 8px rgba(17,53,90,0.04), 0 8px 24px rgba(196,110,156,0.06);
+  --shadow-card-hover:0 4px 14px rgba(17,53,90,0.06), 0 12px 32px rgba(196,110,156,0.10);
 }
 
 /* ============================================================
@@ -207,10 +209,11 @@ a:hover { opacity: 0.88; }
 .card {
   background: var(--lumi-white);
   border-radius: var(--r-card);
-  border: 1px solid rgba(196,110,156,0.1);
-  transition: border-color 0.2s ease;
+  border: 1px solid rgba(196,110,156,0.08);
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
-.card:hover { border-color: rgba(196,110,156,0.25); }
+.card:hover { border-color: rgba(196,110,156,0.18); box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
 
 .card-header {
   padding: var(--sp-5) var(--sp-6);
@@ -234,6 +237,7 @@ a:hover { opacity: 0.88; }
   border-right: 1px solid rgba(196,110,156,0.08);
   border-top: 1px solid rgba(196,110,156,0.08);
   border-bottom: 1px solid rgba(196,110,156,0.08);
+  box-shadow: var(--shadow-card);
   padding: var(--sp-6);
 }
 .stat-value {

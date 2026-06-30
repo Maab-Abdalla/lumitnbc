@@ -6,14 +6,17 @@
   <title>{% block title %}LumiTNBC{% endblock %}</title>
   <script>
     // Apply saved theme before paint to avoid a flash of light mode.
+    // Pages may opt into a light-only mode via the force_light block.
     (function () {
+      var forceLight = {% block force_light %}false{% endblock %};
+      if (forceLight) return;
       try {
         var m = document.cookie.match(/(?:^|; )theme=(dark|light)/);
         if (m && m[1] === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=23">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=24">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   {% block head %}{% endblock %}
 </head>

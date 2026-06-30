@@ -486,6 +486,27 @@ def _register_routes(app):
     def index():
         return render_template("index.html")
 
+    @app.route("/home")
+    @login_required
+    def home():
+        """Dedicated overview page reached by clicking the logo while logged in."""
+        user = current_user()
+        role = session.get("role")
+        dest = {
+            "patient": url_for("dashboard"),
+            "provider": url_for("provider_dashboard"),
+            "admin": url_for("admin_dashboard"),
+        }.get(role, url_for("dashboard"))
+        return render_template("home.html", user=user.to_dict(),
+                               active_page="home", dashboard_url=dest)
+
+    @app.route("/about")
+    @login_required
+    def about():
+        user = current_user()
+        return render_template("about.html", user=user.to_dict(),
+                               active_page="about")
+
     @app.route("/register")
     def register():
         if "user_id" in session:

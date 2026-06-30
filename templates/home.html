@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set active_page = 'home' %}
+{% block title %}Home | LumiTNBC{% endblock %}
+{% block body %}
+{% include "nav.html" %}
+
+<main style="padding:var(--sp-12) var(--sp-6);">
+  <div class="container">
+
+    <!-- Hero / welcome -->
+    <div class="card reveal" style="--delay:0s; overflow:hidden; border:1px solid var(--lumi-blush); background:linear-gradient(135deg, var(--lumi-blush) 0%, var(--lumi-blush-half) 100%);">
+      <div class="card-body" style="padding:var(--sp-10);">
+        <p style="font-size:13px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;color:var(--lumi-pink);margin-bottom:var(--sp-3);">Welcome back</p>
+        <h1 style="font-size:32px;line-height:1.15;letter-spacing:-0.5px;color:var(--lumi-navy);margin-bottom:var(--sp-3);">
+          Hello, {{ user.get('name','there').split(' ')[0] }}
+        </h1>
+        <p style="font-size:16px;color:var(--lumi-slate);line-height:1.6;max-width:560px;margin-bottom:var(--sp-6);">
+          LumiTNBC helps you understand Triple-Negative Breast Cancer molecular subtypes with clear, explainable AI — and connects each result to relevant clinical trials.
+        </p>
+        <a href="{{ dashboard_url }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:10px;">
+          Go to your dashboard
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick orientation cards -->
+    <div class="grid grid-3" style="margin-top:var(--sp-8);">
+
+      <div class="card reveal" style="--delay:0.08s;">
+        <div class="card-body" style="padding:var(--sp-7) var(--sp-6);">
+          <div class="feature-icon" style="margin-bottom:var(--sp-4);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3c4 2 10 2 14 0"></path><path d="M5 21c4-2 10-2 14 0"></path><path d="M5 3c0 6 14 12 14 18"></path><path d="M19 3c0 6-14 12-14 18"></path><path d="M7.5 7h9"></path><path d="M7.5 17h9"></path></svg>
+          </div>
+          <h3 style="font-size:16px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Molecular subtyping</h3>
+          <p style="font-size:14px;color:var(--lumi-slate);line-height:1.55;margin-bottom:0;">Classification into BL1, BL2, LAR, and M subtypes from genomic and clinical inputs.</p>
+        </div>
+      </div>
+
+      <div class="card reveal" style="--delay:0.16s;">
+        <div class="card-body" style="padding:var(--sp-7) var(--sp-6);">
+          <div class="feature-icon" style="margin-bottom:var(--sp-4);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>
+          </div>
+          <h3 style="font-size:16px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Explainable results</h3>
+          <p style="font-size:14px;color:var(--lumi-slate);line-height:1.55;margin-bottom:0;">Every classification comes with the factors that drove it, in plain language.</p>
+        </div>
+      </div>
+
+      <div class="card reveal" style="--delay:0.24s;">
+        <div class="card-body" style="padding:var(--sp-7) var(--sp-6);">
+          <div class="feature-icon" style="margin-bottom:var(--sp-4);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h8"></path><path d="M3 22h18"></path><path d="M14 22a7 7 0 1 0 0-14h-1"></path><path d="M9 14h2"></path><path d="M9 12a2 2 0 0 1-2-2V6h4v4a2 2 0 0 1-2 2Z"></path><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"></path></svg>
+          </div>
+          <h3 style="font-size:16px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Matched trials</h3>
+          <p style="font-size:14px;color:var(--lumi-slate);line-height:1.55;margin-bottom:0;">Relevant clinical trials surfaced for each subtype, so next steps are easier to find.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+{% endblock %}
