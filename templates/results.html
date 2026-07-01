@@ -41,7 +41,7 @@
       </h1>
       <p class="result-banner-sub">Triple-Negative Breast Cancer Molecular Subtype</p>
       <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;">
-        <span class="badge" style="padding:8px 20px;font-size:14px;background:{{ spastel }};color:{{ scolor }};font-weight:600;">Confidence: {{ result.confidence }}%</span>
+        <span class="badge badge-success" style="padding:8px 20px;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Confidence: {{ result.confidence }}%</span>
         <span class="badge badge-{% if result.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}" style="padding:8px 20px;font-size:14px;">{{ 'AI Classification' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Approximation' }}</span>
       </div>
       {% if result.method == 'clinical_rules' %}
@@ -124,47 +124,14 @@
 
     <!-- ===== Charts ===== -->
     <section id="sec-charts" class="result-section" data-panel="charts" data-print-title="Charts">
-      <div class="grid grid-2" style="margin-bottom:var(--sp-6);">
-        <!-- Confidence card -->
-        {% if result.probabilities %}
-        {% set conf_label = 'Very High Confidence' if conf >= 90 else ('High Confidence' if conf >= 75 else ('Moderate Confidence' if conf >= 60 else 'Lower Confidence')) %}
-        <div class="card">
-          <div class="card-header"><h2 class="card-title mb-0">How sure is the model?</h2></div>
-          <div class="card-body">
-            <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--lumi-muted);font-weight:600;margin-bottom:6px;">Prediction</div>
-            <div style="font-size:22px;font-weight:700;color:var(--lumi-navy);line-height:1.2;margin-bottom:var(--sp-4);">
-              {{ info.get('full_name', result.subtype) }} ({{ result.subtype }})
-            </div>
-
-            <div style="display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-2);">
-              <span style="font-size:40px;font-weight:700;color:var(--conf-pct);line-height:1;">{{ result.confidence }}%</span>
-              <span style="font-size:14px;font-weight:600;color:var(--conf-label);">{{ conf_label }}</span>
-            </div>
-
-            <div style="font-size:12px;color:var(--lumi-muted);font-weight:600;margin:var(--sp-4) 0 6px;">Confidence Level</div>
-            <div class="progress" style="height:18px;border-radius:999px;">
-              <div class="progress-bar" style="width:{{ result.confidence }}%;background:var(--conf-grad);border-radius:999px;"></div>
-            </div>
-
-            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin-top:var(--sp-4);margin-bottom:0;">
-              {% if conf >= 85 %}
-                The model is highly confident this tumour belongs to the {{ result.subtype }} subtype. The other subtypes were considered but scored much lower.
-              {% elif conf >= 65 %}
-                The model is reasonably confident in this result. Your care team can confirm with additional tests if needed.
-              {% else %}
-                This result is less certain, as the subtypes scored closely. Your care team may recommend further testing to confirm.
-              {% endif %}
-            </p>
-          </div>
-        </div>
-        {% endif %}
+      <div style="margin-bottom:var(--sp-6);">
 
         <!-- What pushed the decision (simple bars, coloured by direction) -->
         {% if patient_shap_chart %}
         <div class="card">
           <div class="card-header"><h2 class="card-title mb-0">What pushed the decision</h2></div>
           <div class="card-body">
-            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">These signals most influenced your result. Longer bars had more influence. Amber pushed toward {{ result.subtype }}; grey pushed away.</p>
+            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">These signals most influenced your result. Longer bars had more influence. Pink pushed toward {{ result.subtype }}; blue pushed away.</p>
             {% set maxmag = patient_shap_chart|map(attribute='value')|max %}
             {% for f in patient_shap_chart %}
             <div style="margin-bottom:var(--sp-4);">

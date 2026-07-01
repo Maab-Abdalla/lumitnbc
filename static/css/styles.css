@@ -36,8 +36,8 @@
   --sub-m-soft:       #C9E4DE;   /* mint     (pastel) */
 
   /* --- SHAP direction (subtype-independent, so it never clashes with identity colours) --- */
-  --shap-toward:      #E0995E;   /* warm amber: pushed toward the result */
-  --shap-away:        #8B93A7;   /* muted slate: pushed away */
+  --shap-toward:      #E58BB4;   /* pink: pushed toward the result */
+  --shap-away:        #6FA8DC;   /* blue: pushed away */
 
   /* --- Confidence card (fixed for every subtype; multi-hue so it isn't monochromatic) --- */
   --conf-pct:         #4A8EC2;   /* blue  : the big percentage */

@@ -436,6 +436,39 @@ GENE_PLAIN_LABELS = {
     "EPHB3":    ("Cell boundary signalling",      "A gene that helps cells define their boundaries was active in your sample."),
     "UCP2":     ("Cellular energy metabolism",    "A gene involved in how your tumour cells generate energy was elevated."),
     "NDRG2":    ("Stress response gene",          "A gene involved in how cells respond to stress matched your tumour profile."),
+    "FOXA1":    ("Hormone-signalling regulator",  "A gene that guides hormone-receptor activity was highly active, a hallmark of the LAR subtype."),
+    "SPDEF":    ("Gland-cell identity gene",       "A gene linked to gland-like (luminal) cell identity was active, characteristic of the LAR subtype."),
+    "CA12":     ("Hormone-responsive marker",      "A protein often switched on by hormone signalling was elevated, consistent with the LAR subtype."),
+    "MLPH":     ("Luminal cell marker",            "A gene typical of luminal (gland-like) breast cells was active, supporting an LAR classification."),
+    "APOD":     ("Lipid-transport protein",        "A protein involved in fat transport, commonly seen in hormone-driven tumours, was elevated."),
+    "PIP":      ("Secretory gland protein",        "A protein made by secretory gland cells was highly active, a feature of luminal-type tumours."),
+    "SCUBE2":   ("Luminal signalling protein",     "A signalling protein associated with luminal breast tissue supported this classification."),
+    "TFAP2B":   ("Cell identity regulator",        "A gene that helps set cell identity showed a pattern typical of this subtype."),
+    "AR":       ("Androgen receptor signalling",   "Androgen-receptor-related activity was detected, the defining feature of the LAR subtype."),
+    "KRT6A":    ("Basal keratin protein",          "A structural keratin protein typical of basal-type cells was elevated, pointing to a basal-like subtype."),
+    "KRT6B":    ("Basal keratin protein",          "A structural keratin protein found in basal-type cells was active, characteristic of basal-like tumours."),
+    "KRT14":    ("Basal keratin protein",          "A keratin protein typical of basal breast cells was elevated, a hallmark of basal-like subtypes."),
+    "KRT17":    ("Basal keratin protein",          "A basal-cell keratin protein was highly active, consistent with a basal-like classification."),
+    "EGFL6":    ("Growth-factor protein",          "A growth-factor-related protein often seen in basal-like tumours was active."),
+    "CD163":    ("Immune cell marker",             "A marker of immune cells (macrophages) was detected, indicating an immune-rich tumour."),
+    "IDO1":     ("Immune regulation enzyme",       "An enzyme that regulates immune responses was active, associated with immune-active tumours."),
+    "TAP1":     ("Immune presentation gene",       "A gene involved in how cells display signals to the immune system was elevated."),
+    "CCL8":     ("Immune signalling molecule",     "A signalling molecule that recruits immune cells was highly active."),
+    "MARCO":    ("Immune cell receptor",           "A receptor found on immune cells was detected, a sign of immune involvement."),
+    "GZMK":     ("Immune killer-cell marker",      "A marker of immune killer cells was active, indicating immune activity in the tumour."),
+    "FN1":      ("Tissue scaffold protein",        "A structural protein of the tissue scaffold was elevated, a feature of mesenchymal-type tumours."),
+    "TAGLN":    ("Muscle-like structural protein", "A protein linked to cell movement and structure was active, characteristic of mesenchymal tumours."),
+    "CALD1":    ("Cell movement protein",          "A protein involved in cell movement was elevated, consistent with the mesenchymal subtype."),
+    "IL1RN":    ("Inflammation regulator",         "A protein that regulates inflammation was active in your sample."),
+    "CXCL10":   ("Immune recruitment signal",      "A signalling molecule that attracts immune cells was highly active."),
+    "IFI44L":   ("Immune response gene",           "A gene switched on during immune responses was elevated."),
+    "IFIH1":    ("Viral-sensing immune gene",      "A gene that helps the immune system sense threats was active."),
+    "GJB2":     ("Cell-communication protein",     "A protein that lets cells communicate directly was elevated in your sample."),
+    "SCUBE3":   ("Signalling protein",             "A signalling protein that helps characterise your subtype was active."),
+    "SLC40A1":  ("Iron-transport protein",         "A protein that moves iron in and out of cells was active in your sample."),
+    "CRYAB":    ("Cell-protection protein",        "A protein that protects cells under stress was elevated, seen in some mesenchymal tumours."),
+    "MME":      ("Cell-surface enzyme",            "An enzyme on the cell surface showed activity that helped identify your subtype."),
+    "SCGB3A1":  ("Secreted gland protein",         "A protein secreted by gland cells was active, associated with luminal-type tumours."),
     "clin_age":         ("Patient age",            "Your age was one factor that helped refine the prediction."),
     "clin_grade":       ("Tumour grade",           "The grade of your tumour (how different the cells look from normal) was an important factor."),
     "clin_stage":       ("Cancer stage",           "The stage of your cancer was taken into account."),
@@ -446,10 +479,27 @@ GENE_PLAIN_LABELS = {
 
 
 def gene_label(gene):
-    """Return (short_label, sentence) plain-language description for a feature."""
-    return GENE_PLAIN_LABELS.get(
-        gene, ("Molecular marker activity",
-               "This marker showed activity that supported the result."))
+    """Return (short_label, sentence) plain-language description for a feature.
+    Mapped genes get a curated description. Unmapped genes get a differentiated
+    generic label (varied by a stable hash of the symbol) so a result never
+    shows the same 'Molecular marker activity' repeated for every factor."""
+    hit = GENE_PLAIN_LABELS.get(gene)
+    if hit:
+        return hit
+    # Deterministic variety for unmapped genes: pick one of several neutral
+    # categories based on the gene symbol, and name the marker so rows differ.
+    generic = [
+        "Gene activity signal",
+        "Molecular marker activity",
+        "Gene expression pattern",
+        "Cellular activity marker",
+        "Tissue molecular signal",
+    ]
+    idx = (sum(ord(c) for c in gene) % len(generic)) if gene else 0
+    label = generic[idx]
+    return (label,
+            "This molecular signal showed activity that contributed to your "
+            "result. Your care team can explain its role in detail.")
 
 
 def build_patient_shap_chart(result):
