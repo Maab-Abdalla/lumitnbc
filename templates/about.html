@@ -1,49 +1,111 @@
 {% extends "base.html" %}
 {% set active_page = 'about' %}
-{% block title %}About Us | LumiTNBC{% endblock %}
+{% block title %}About | LumiTNBC{% endblock %}
 {% block body %}
 {% include "nav.html" %}
 
 <main style="padding:var(--sp-12) var(--sp-6);">
-  <div class="container" style="max-width:860px;">
+  <div class="container" style="max-width:920px;">
 
-    <!-- Header -->
-    <div class="reveal" style="--delay:0s; margin-bottom:var(--sp-10);">
+    <!-- Header / overview -->
+    <div class="reveal" style="--delay:0s; margin-bottom:var(--sp-8);">
       <p style="font-size:13px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;color:var(--lumi-pink);margin-bottom:var(--sp-3);">About</p>
       <h1 style="font-size:34px;line-height:1.15;letter-spacing:-0.5px;color:var(--lumi-navy);margin-bottom:var(--sp-4);">Clarity for the TNBC journey</h1>
-      <p style="font-size:17px;color:var(--lumi-slate);line-height:1.65;max-width:640px;">
-        LumiTNBC is a research-driven tool that classifies Triple-Negative Breast Cancer into its molecular subtypes and explains each result in language patients and clinicians can both follow.
+      <p style="font-size:17px;color:var(--lumi-slate);line-height:1.65;max-width:660px;">
+        LumiTNBC is a research-driven decision-support tool that classifies Triple-Negative Breast Cancer into its molecular subtypes and explains each result in language patients and clinicians can both follow.
       </p>
     </div>
 
-    <!-- What it does -->
-    <div class="card reveal" style="--delay:0.08s; margin-bottom:var(--sp-6);">
-      <div class="card-body" style="padding:var(--sp-8);">
-        <h2 style="font-size:20px;color:var(--lumi-navy);margin-bottom:var(--sp-4);">What LumiTNBC does</h2>
-        <p style="font-size:15px;color:var(--lumi-slate);line-height:1.7;margin-bottom:var(--sp-4);">
-          Triple-Negative Breast Cancer is not a single disease. It separates into distinct molecular subtypes — Basal-like 1 (BL1), Basal-like 2 (BL2), Luminal Androgen Receptor (LAR), and Mesenchymal (M) — that behave differently and respond to different therapies. Knowing the subtype is a meaningful part of understanding treatment options.
-        </p>
-        <p style="font-size:15px;color:var(--lumi-slate);line-height:1.7;margin-bottom:0;">
-          LumiTNBC takes gene expression data, clinical and pathology information, or a combination of both, and predicts the most likely subtype — then shows the genomic and clinical factors that shaped that prediction.
-        </p>
+    <!-- Who it's for -->
+    <h2 class="reveal" style="--delay:0.06s; font-size:22px;color:var(--lumi-navy);margin-bottom:var(--sp-4);">Who it's for</h2>
+    <div class="grid grid-3" style="margin-bottom:var(--sp-10);">
+      <div class="card reveal" style="--delay:0.1s;">
+        <div class="card-body" style="padding:var(--sp-6);">
+          <div class="feature-icon" style="margin-bottom:var(--sp-3);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Patients</h3>
+          <p style="font-size:13.5px;color:var(--lumi-slate);line-height:1.55;margin:0;">Understand your subtype in plain language and see what shaped the result.</p>
+        </div>
+      </div>
+      <div class="card reveal" style="--delay:0.18s;">
+        <div class="card-body" style="padding:var(--sp-6);">
+          <div class="feature-icon" style="margin-bottom:var(--sp-3);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          </div>
+          <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Providers</h3>
+          <p style="font-size:13.5px;color:var(--lumi-slate);line-height:1.55;margin:0;">Review classifications with feature-level detail and send feedback to patients.</p>
+        </div>
+      </div>
+      <div class="card reveal" style="--delay:0.26s;">
+        <div class="card-body" style="padding:var(--sp-6);">
+          <div class="feature-icon" style="margin-bottom:var(--sp-3);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Administrators</h3>
+          <p style="font-size:13.5px;color:var(--lumi-slate);line-height:1.55;margin:0;">Manage users and models and oversee the system's health.</p>
+        </div>
       </div>
     </div>
 
     <!-- How it works -->
-    <div class="card reveal" style="--delay:0.16s; margin-bottom:var(--sp-6);">
+    <h2 class="reveal" style="--delay:0.3s; font-size:22px;color:var(--lumi-navy);margin-bottom:var(--sp-4);">How it works</h2>
+    <div class="card reveal" style="--delay:0.34s; margin-bottom:var(--sp-10);">
       <div class="card-body" style="padding:var(--sp-8);">
-        <h2 style="font-size:20px;color:var(--lumi-navy);margin-bottom:var(--sp-4);">How it works</h2>
-        <p style="font-size:15px;color:var(--lumi-slate);line-height:1.7;margin-bottom:var(--sp-4);">
-          The classifier is a gradient-boosted model (XGBoost) trained on combined public datasets. Predictions are paired with SHAP, an explainability method that attributes the result to specific input features — so a classification is never a black box. Patients see a plain-language summary; clinicians can inspect the underlying feature contributions.
-        </p>
-        <p style="font-size:15px;color:var(--lumi-slate);line-height:1.7;margin-bottom:0;">
-          Patients can also request a written review of their result from a healthcare provider, keeping a human in the loop.
-        </p>
+        <div style="display:flex;gap:var(--sp-5);margin-bottom:var(--sp-5);align-items:flex-start;">
+          <div class="step-num">1</div>
+          <div>
+            <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-1);">Input your data</h3>
+            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin:0;">Provide gene expression data, clinical and pathology information, or a combination of both.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--sp-5);margin-bottom:var(--sp-5);align-items:flex-start;">
+          <div class="step-num">2</div>
+          <div>
+            <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-1);">Model prediction</h3>
+            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin:0;">A gradient-boosted model (XGBoost) predicts the most likely subtype — BL1, BL2, LAR, or M.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--sp-5);margin-bottom:var(--sp-5);align-items:flex-start;">
+          <div class="step-num">3</div>
+          <div>
+            <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-1);">Explainable result</h3>
+            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin:0;">SHAP attributes the prediction to specific features, so the result is never a black box.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:var(--sp-5);align-items:flex-start;">
+          <div class="step-num">4</div>
+          <div>
+            <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-1);">Human in the loop</h3>
+            <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin:0;">Patients can request a written review from a healthcare provider before acting on anything.</p>
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- FAQ flip cards -->
+    <h2 class="reveal" style="--delay:0.4s; font-size:22px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Frequently asked questions</h2>
+    <p class="reveal" style="--delay:0.42s; font-size:13px;color:var(--lumi-muted);margin-bottom:var(--sp-4);">Tap a card to see the answer.</p>
+    <div class="grid grid-3" style="margin-bottom:var(--sp-10);">
+      {% for f in (about_faqs + general_faqs) %}
+      <div class="flip-card reveal" style="--delay:{{ 0.44 + loop.index0 * 0.06 }}s;" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('flipped');}">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <span class="flip-hint">Question</span>
+            <p class="flip-q">{{ f.q }}</p>
+            <span class="flip-cue">Tap to reveal ↻</span>
+          </div>
+          <div class="flip-face flip-back">
+            <span class="flip-hint">Answer</span>
+            <p class="flip-a">{{ f.a }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
     <!-- Important note -->
-    <div class="card reveal" style="--delay:0.24s; border-left:4px solid var(--lumi-blue);">
+    <div class="card reveal" style="--delay:0.6s; border-left:4px solid var(--lumi-blue);">
       <div class="card-body" style="padding:var(--sp-7) var(--sp-8);">
         <h2 style="font-size:16px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">An important note</h2>
         <p style="font-size:14px;color:var(--lumi-slate);line-height:1.65;margin-bottom:0;">

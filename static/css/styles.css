@@ -199,6 +199,62 @@ a:hover { opacity: 0.88; }
 .snippet-chip:hover { background: var(--lumi-pink); color: var(--lumi-white); border-color: var(--lumi-pink); }
 :root[data-theme="dark"] .snippet-chip { background: transparent; }
 
+/* Numbered step markers (About > How it works) */
+.step-num {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--lumi-pink);
+  color: var(--lumi-white);
+  font-weight: 700;
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Flip cards (About FAQ) */
+.flip-card {
+  background: transparent;
+  perspective: 1200px;
+  min-height: 190px;
+  cursor: pointer;
+  outline: none;
+}
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 190px;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-card:focus-visible .flip-inner { box-shadow: var(--shadow-focus); border-radius: var(--r-card); }
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--r-card);
+  border: 1px solid rgba(196,110,156,0.10);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+}
+.flip-front { background: var(--lumi-white); }
+.flip-back {
+  background: linear-gradient(135deg, var(--lumi-blush) 0%, var(--lumi-blush-half) 100%);
+  transform: rotateY(180deg);
+}
+.flip-hint {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--lumi-pink); margin-bottom: var(--sp-2);
+}
+.flip-q { font-size: 15.5px; font-weight: 600; color: var(--lumi-navy); line-height: 1.4; margin: 0; }
+.flip-a { font-size: 13.5px; color: var(--lumi-slate); line-height: 1.55; margin: 0; }
+.flip-cue { margin-top: auto; font-size: 12px; color: var(--lumi-muted); }
+:root[data-theme="dark"] .flip-front { background: var(--lumi-white); }
+
 @media (max-width: 720px) {
   .btn-lg { width: 100%; }
 }

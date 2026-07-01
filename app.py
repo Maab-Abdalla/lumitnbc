@@ -378,6 +378,40 @@ GENERAL_FAQS = [
      "a": "Bring them to your care team. They can interpret the subtype in the context of your full medical picture and discuss whether it affects your treatment or trial eligibility."},
 ]
 
+# Curated, plain-language TNBC information highlights shown on the home page.
+# These are stable educational pointers to reputable organisations, NOT dated
+# breaking news — the app has no live news feed, so they are labelled as
+# "highlights" rather than "latest news" to avoid implying freshness.
+TNBC_HIGHLIGHTS = [
+    {"tag": "Understanding TNBC",
+     "title": "What makes triple-negative breast cancer different",
+     "summary": "TNBC lacks the three receptors (ER, PR, HER2) that many breast cancer treatments target, which is why molecular subtyping matters for planning care.",
+     "source": "Breast Cancer Now",
+     "url": "https://breastcancernow.org/about-breast-cancer/what-is-breast-cancer/triple-negative-breast-cancer/"},
+    {"tag": "Treatment",
+     "title": "Immunotherapy and targeted options in TNBC",
+     "summary": "Research into immunotherapy, PARP inhibitors and antibody-drug conjugates continues to expand treatment options for some people with TNBC.",
+     "source": "National Cancer Institute",
+     "url": "https://www.cancer.gov/types/breast/patient/triple-negative-treatment-pdq"},
+    {"tag": "Clinical trials",
+     "title": "Finding a clinical trial that fits your profile",
+     "summary": "Molecular subtype can affect trial eligibility. ClinicalTrials.gov lists actively recruiting studies you can discuss with your care team.",
+     "source": "ClinicalTrials.gov",
+     "url": "https://clinicaltrials.gov/search?cond=Triple%20Negative%20Breast%20Cancer&aggFilters=status:rec"},
+]
+
+# FAQ shown on the About page. Combines LumiTNBC-specific questions with the
+# general result-interpretation FAQs reused from the Resources page.
+ABOUT_FAQS = [
+    {"q": "What is LumiTNBC?",
+     "a": "A research and educational decision-support tool that classifies triple-negative breast cancer into molecular subtypes (BL1, BL2, LAR, M) and explains the factors behind each result."},
+    {"q": "Is this a medical diagnosis?",
+     "a": "No. LumiTNBC does not diagnose and is not a substitute for professional clinical judgment. It is a support tool to be interpreted alongside your care team's full assessment."},
+    {"q": "Who can use it?",
+     "a": "Patients exploring their results, healthcare providers reviewing classifications, and administrators managing the system. Each role sees a view suited to them."},
+]
+
+
 
 
 # Plain-language labels for SHAP features, shown to patients instead of raw
@@ -498,14 +532,18 @@ def _register_routes(app):
             "admin": url_for("admin_dashboard"),
         }.get(role, url_for("dashboard"))
         return render_template("home.html", user=user.to_dict(),
-                               active_page="home", dashboard_url=dest)
+                               active_page="home", dashboard_url=dest,
+                               highlights=TNBC_HIGHLIGHTS,
+                               resources_url=url_for("resources"))
 
     @app.route("/about")
     @login_required
     def about():
         user = current_user()
         return render_template("about.html", user=user.to_dict(),
-                               active_page="about")
+                               active_page="about",
+                               about_faqs=ABOUT_FAQS,
+                               general_faqs=GENERAL_FAQS)
 
     @app.route("/register")
     def register():
