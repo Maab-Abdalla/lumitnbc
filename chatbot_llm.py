@@ -34,7 +34,7 @@ _KB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "chatbot_kb.json")
 
 CHAT_MODEL = os.environ.get("ANTHROPIC_CHAT_MODEL", "claude-haiku-4-5-20251001")
-MAX_TOKENS = 400
+MAX_TOKENS = 220
 TOP_K = 3  # how many KB chunks to inject
 
 
@@ -87,25 +87,58 @@ SYSTEM_PROMPT = (
     "people understand triple-negative breast cancer (TNBC) molecular subtypes.\n\n"
     "SCOPE: Answer questions about TNBC in general, the four molecular subtypes "
     "(BL1, BL2, LAR, M), how the app works, how to read results, and how "
-    "clinical-trial matching works. Keep answers short (2-4 sentences), warm, and "
-    "in plain language.\n\n"
+    "clinical-trial matching works.\n\n"
+    "ANSWER STYLE (follow exactly):\n"
+    "- Be clear, organised, and straight to the point. Lead with the direct answer.\n"
+    "- Keep it to 2-3 short sentences (about 50 words). Stop once the question is "
+    "answered; do not pad or over-explain.\n"
+    "- Write in plain text ONLY. Do NOT use Markdown or any special formatting: no "
+    "asterisks (*), no bold, no italics, no headings, no bullet characters, no "
+    "backticks.\n"
+    "- Do NOT use em dashes or en dashes (the long dash characters). Use a comma, a "
+    "full stop, or the word 'to' for ranges instead.\n"
+    "- If you list a few items, separate them with commas in a normal sentence.\n\n"
     "SAFETY RULES (important):\n"
     "- You may give general, educational information.\n"
     "- You must NOT give personalised medical advice, treatment or medication "
     "recommendations, dosing, or prognosis ('how long', 'will I survive', "
     "'what should I do', 'is this treatment right for me'). For those, gently "
-    "decline and tell the person to discuss it with their own oncologist or care "
-    "team.\n"
+    "decline in one sentence and tell the person to discuss it with their own "
+    "oncologist or care team.\n"
     "- Do not diagnose. Do not interpret an individual's specific medical results.\n"
-    "- If a question is outside TNBC / this app, say it's outside what you can "
-    "help with here.\n"
+    "- If a question is outside TNBC / this app, say briefly it's outside what you "
+    "can help with here.\n"
     "- Never invent statistics, study results, or clinical-trial details.\n\n"
     "Ground your answer in the provided CONTEXT when it is relevant. If the "
-    "context does not cover the question and it is still in scope, you may give a "
-    "brief general answer, but do not fabricate specifics. Always be clear that "
-    "LumiTNBC is a decision-support tool, not a substitute for professional "
-    "medical care."
+    "context does not cover the question and it is still in scope, give a brief "
+    "general answer without fabricating specifics. LumiTNBC is a decision-support "
+    "tool, not a substitute for professional medical care."
 )
+
+
+def _clean_reply(text):
+    """Safety net: strip Markdown and long dashes in case the model slips.
+    Keeps the answer as plain, readable text regardless of prompt adherence."""
+    if not text:
+        return text
+    # Remove bold/italic markers (**x**, __x__, *x*, _x_) keeping inner text.
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"__(.+?)__", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"(?<!\w)_(.+?)_(?!\w)", r"\1", text)
+    # Strip leading heading hashes and list bullets at line starts.
+    text = re.sub(r"(?m)^\s{0,3}#{1,6}\s*", "", text)
+    text = re.sub(r"(?m)^\s*[-*\u2022]\s+", "", text)
+    # Remove stray backticks.
+    text = text.replace("`", "")
+    # Replace em/en dashes with a comma-space (or plain space if already spaced).
+    text = re.sub(r"\s*[\u2014\u2013]\s*", ", ", text)
+    # Any leftover lone asterisks.
+    text = text.replace("*", "")
+    # Collapse excess whitespace/blank lines.
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 def generate_reply(question, history=None):
@@ -155,6 +188,7 @@ def generate_reply(question, history=None):
         )
         text = "".join(b.text for b in msg.content
                        if getattr(b, "type", None) == "text").strip()
+        text = _clean_reply(text)
         return {"enabled": True, "reply": text or None, "error": None}
     except Exception as exc:
         return {"enabled": False, "reply": None, "error": str(exc)}
