@@ -116,6 +116,37 @@ SYSTEM_PROMPT = (
 )
 
 
+# Audience guidance appended per user role. This is what fixes answers being
+# pitched at the wrong level: a patient asking "what data do I need?" should
+# hear "gene expression data from your tumour sample; your care team handles
+# the technical preparation", NOT log2-FPKM/TPM/normalisation/feature-matching.
+ROLE_GUIDANCE = {
+    "patient": (
+        "\n\nAUDIENCE: You are talking to a PATIENT, not a clinician.\n"
+        "- Answer in everyday language a non-scientist understands.\n"
+        "- Do NOT include technical data-handling detail (file formats, "
+        "log2/FPKM/TPM, normalisation, raw read counts, matching training "
+        "features, preprocessing pipelines). These are handled by the patient's "
+        "care team or laboratory, not the patient.\n"
+        "- If the CONTEXT contains such technical detail, do NOT repeat it. "
+        "Instead, summarise at a high level and say their doctor, care team, or "
+        "lab takes care of preparing and formatting the data.\n"
+        "- Keep it reassuring and simple. Example: if asked what data is needed, "
+        "say it is gene expression information from their tumour sample, and that "
+        "their care team handles the technical side."
+    ),
+    "provider": (
+        "\n\nAUDIENCE: You are talking to a HEALTHCARE PROVIDER or researcher.\n"
+        "- Precise clinical and technical detail from the CONTEXT is appropriate "
+        "(input formats, normalisation, features), but stay concise."
+    ),
+    "admin": (
+        "\n\nAUDIENCE: You are talking to a system ADMINISTRATOR.\n"
+        "- Focus on how the app and model work; clinical specifics are secondary."
+    ),
+}
+
+
 def _clean_reply(text):
     """Safety net: strip Markdown and long dashes in case the model slips.
     Keeps the answer as plain, readable text regardless of prompt adherence."""
@@ -141,10 +172,11 @@ def _clean_reply(text):
     return text.strip()
 
 
-def generate_reply(question, history=None):
+def generate_reply(question, history=None, role="patient"):
     """Return {"enabled": bool, "reply": str|None, "error": str|None}.
-    Never raises; on any failure returns enabled=False so the caller can fall
-    back to the offline keyword bot."""
+    `role` ("patient" | "provider" | "admin") tailors the answer's depth and
+    audience. Never raises; on any failure returns enabled=False so the caller
+    can fall back to the offline keyword bot."""
     if not is_enabled():
         return {"enabled": False, "reply": None, "error": None}
 
@@ -179,11 +211,12 @@ def generate_reply(question, history=None):
 
     try:
         client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+        system_prompt = SYSTEM_PROMPT + ROLE_GUIDANCE.get(role, ROLE_GUIDANCE["patient"])
         msg = client.messages.create(
             model=CHAT_MODEL,
             max_tokens=MAX_TOKENS,
             temperature=0.3,
-            system=SYSTEM_PROMPT,
+            system=system_prompt,
             messages=messages,
         )
         text = "".join(b.text for b in msg.content

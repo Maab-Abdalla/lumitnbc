@@ -25,11 +25,15 @@
   --lumi-warning:     #EC7E00;
   --lumi-danger:      #E23B4A;
 
-  /* --- Subtype (each its own colour, softened) --- */
-  --sub-bl1:          #C46E9C;   /* rose */
-  --sub-bl2:          #E3B5CC;   /* light rose */
-  --sub-lar:          #5E93BE;   /* slate blue */
-  --sub-m:            #2C9C84;   /* teal-green */
+  /* --- Subtype (soft palette hues: readable text shade + pastel accent) --- */
+  --sub-bl1:          #C85C90;   /* pink   (text)   */
+  --sub-bl1-soft:     #F2C6DE;   /* pink   (pastel) */
+  --sub-bl2:          #C97F4E;   /* peach  (text)   */
+  --sub-bl2-soft:     #F7D9C4;   /* peach  (pastel) */
+  --sub-lar:          #4A8EC2;   /* sky    (text)   */
+  --sub-lar-soft:     #C6DEF1;   /* sky    (pastel) */
+  --sub-m:            #3E9B85;   /* mint   (text)   */
+  --sub-m-soft:       #C9E4DE;   /* mint   (pastel) */
 
   /* --- Spacing (8px base) --- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;  --sp-4: 16px;
@@ -130,6 +134,20 @@ a:hover { opacity: 0.88; }
 .user-profile { display: flex; align-items: center; gap: var(--sp-4); }
 .header-icon { font-size: 20px; color: var(--lumi-slate); transition: color 0.15s; cursor: pointer; }
 .header-icon:hover { color: var(--lumi-pink); }
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--lumi-navy);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+}
+.header-icon-btn:hover { background: var(--lumi-blush-half); color: var(--lumi-pink); }
 
 @media (max-width: 720px) {
   .header-nav { display: none; }
@@ -201,6 +219,28 @@ a:hover { opacity: 0.88; }
   line-height: 1.4;
 }
 .review-field textarea { resize: vertical; margin: 0; }
+.rf-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.rf-chip {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--lumi-pink);
+  background: var(--lumi-blush-half);
+  border: 1px solid var(--lumi-pink-soft);
+  border-radius: var(--r-pill);
+  padding: 5px 13px;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.35;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.rf-chip:hover { background: var(--lumi-pink); color: var(--lumi-white); border-color: var(--lumi-pink); }
+.rf-chip:active { transform: translateY(1px); }
 
 /* Review helper snippet chips */
 .snippet-chip {

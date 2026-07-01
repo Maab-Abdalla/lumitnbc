@@ -4,26 +4,24 @@
 {% block body %}
 {% include "nav.html" %}
 
-<main style="padding:var(--sp-12) var(--sp-6);">
+<main style="padding:var(--sp-12) var(--sp-6); background:linear-gradient(180deg, var(--lumi-blush) 0%, var(--lumi-blush-half) 100%); min-height:100vh;">
   <div class="container">
 
-    <!-- Overview hero -->
-    <div class="card reveal" style="--delay:0s; overflow:hidden; border:1px solid var(--lumi-blush); background:linear-gradient(135deg, var(--lumi-blush) 0%, var(--lumi-blush-half) 100%);">
-      <div class="card-body" style="padding:var(--sp-10);">
-        <p style="font-size:13px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;color:var(--lumi-pink);margin-bottom:var(--sp-3);">Welcome back</p>
-        <h1 style="font-size:32px;line-height:1.15;letter-spacing:-0.5px;color:var(--lumi-navy);margin-bottom:var(--sp-3);">
-          Hello, {{ user.get('name','there').split(' ')[0] }}
-        </h1>
-        <p style="font-size:16px;color:var(--lumi-slate);line-height:1.6;max-width:600px;margin-bottom:var(--sp-6);">
-          LumiTNBC helps you understand Triple-Negative Breast Cancer molecular subtypes with clear, explainable AI — and connects each result to relevant clinical trials and trusted support.
-        </p>
-        <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
-          <a href="{{ dashboard_url }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:10px;">
-            Go to your dashboard
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
-          <a href="{{ url_for('about') }}" class="btn btn-outline">About LumiTNBC</a>
-        </div>
+    <!-- Overview hero (no card, sits on the pink page background) -->
+    <div class="reveal" style="--delay:0s; padding:var(--sp-6) 0 var(--sp-10);">
+      <p style="font-size:13px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;color:var(--lumi-pink);margin-bottom:var(--sp-3);">Welcome back</p>
+      <h1 style="font-size:34px;line-height:1.15;letter-spacing:-0.5px;color:var(--lumi-navy);margin-bottom:var(--sp-3);">
+        Understanding your TNBC journey
+      </h1>
+      <p style="font-size:16px;color:var(--lumi-slate);line-height:1.6;max-width:600px;margin-bottom:var(--sp-6);">
+        LumiTNBC helps you understand Triple-Negative Breast Cancer molecular subtypes with clear, explainable AI, connecting each result to relevant clinical trials and trusted support.
+      </p>
+      <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
+        <a href="{{ dashboard_url }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:10px;">
+          Go to your dashboard
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+        <a href="{{ url_for('about') }}" class="btn btn-outline">About LumiTNBC</a>
       </div>
     </div>
 

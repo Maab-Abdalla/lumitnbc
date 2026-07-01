@@ -6,6 +6,7 @@
 
 {% set info = subtype_info.get(result.subtype, {}) if result else {} %}
 {% set scolor = info.get('color', 'var(--lumi-pink)') %}
+{% set spastel = info.get('pastel', '#F2C6DE') %}
 
 <main style="padding:var(--sp-12) var(--sp-6);">
   <div class="container container--tight">
@@ -24,10 +25,10 @@
 
     {% if result %}
     <!-- AI classification summary -->
-    <div style="background:linear-gradient(135deg,#FEE8F1 0%,#FFFAFD 100%);border:2px solid {{ scolor }};border-radius:var(--r-feat);padding:var(--sp-6);margin-bottom:var(--sp-6);text-align:center;">
+    <div style="background:linear-gradient(135deg,{{ spastel }} 0%,var(--lumi-blush-half) 100%);border:2px solid {{ scolor }};border-radius:var(--r-feat);padding:var(--sp-6);margin-bottom:var(--sp-6);text-align:center;">
       <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lumi-slate);margin-bottom:var(--sp-1);font-weight:600;">AI Predicted Subtype</p>
       <h2 style="font-size:30px;color:{{ scolor }};margin-bottom:var(--sp-2);">{{ info.get('full_name', result.subtype) }} ({{ result.subtype }})</h2>
-      <span class="badge badge-success">Confidence {{ result.confidence }}%</span>
+      <span class="badge" style="background:{{ spastel }};color:{{ scolor }};font-weight:600;">Confidence {{ result.confidence }}%</span>
       <span class="badge badge-{% if result.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}">{{ 'AI Model' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Rules' }}</span>
     </div>
 
@@ -96,30 +97,54 @@
           <div style="padding:var(--sp-4);background:var(--lumi-blush-half);border-radius:var(--r-input);font-size:14px;line-height:1.6;white-space:pre-wrap;">{{ review.review_text }}</div>
           <p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-3);">Submitted {{ review.reviewed_at[:16].replace('T',' ') if review.reviewed_at else '' }}{% if review.reviewer_name %} by {{ review.reviewer_name }}{% endif %}. This has been sent to the patient.</p>
         {% else %}
-          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Fill in the fields below in plain, supportive language. They combine into the feedback the patient sees on their results page. Only <em>Assessment</em> is required — leave any field blank to skip it. Avoid identifying information.</p>
+          <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Fill in the fields below in plain, supportive language. They combine into the feedback the patient sees on their results page. Click an option to insert a phrase, then edit as needed. Only <em>Assessment</em> is required, leave any field blank to skip it. Avoid identifying information.</p>
           <div id="review-msg" style="display:none;padding:var(--sp-3);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-size:13px;"></div>
 
           <div class="review-field">
             <label for="rf-assessment">Assessment <span class="req">*</span></label>
-            <p class="rf-hint">Your overall read of the classification.</p>
+            <p class="rf-hint">Your overall read of the classification. Pick an option or write your own.</p>
+            <div class="rf-options">
+              <button type="button" class="rf-chip" onclick="insertOption('rf-assessment', this.textContent)">Consistent with the markers shown</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-assessment', this.textContent)">A high-confidence result</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-assessment', this.textContent)">Worth interpreting with some caution</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-assessment', this.textContent)">One input alongside your full clinical picture</button>
+            </div>
             <textarea id="rf-assessment" class="form-input" rows="3" placeholder="e.g. I've reviewed your classification and the predicted subtype is consistent with the molecular markers shown."></textarea>
           </div>
 
           <div class="review-field">
             <label for="rf-meaning">What this means for you</label>
             <p class="rf-hint">Put the result in context for the patient.</p>
+            <div class="rf-options">
+              <button type="button" class="rf-chip" onclick="insertOption('rf-meaning', this.textContent)">One piece of the overall picture</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-meaning', this.textContent)">Helps guide which treatments may be relevant</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-meaning', this.textContent)">Does not change your diagnosis on its own</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-meaning', this.textContent)">Something to explore with your care team</button>
+            </div>
             <textarea id="rf-meaning" class="form-input" rows="3" placeholder="e.g. This subtype is one piece of the picture and helps guide which treatment options may be most relevant."></textarea>
           </div>
 
           <div class="review-field">
             <label for="rf-nextsteps">Suggested next steps</label>
             <p class="rf-hint">What you'd recommend the patient do next.</p>
+            <div class="rf-options">
+              <button type="button" class="rf-chip" onclick="insertOption('rf-nextsteps', this.textContent)">Discuss these results with your oncology team</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-nextsteps', this.textContent)">Ask whether further testing is recommended</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-nextsteps', this.textContent)">Bring these results to your next appointment</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-nextsteps', this.textContent)">No urgent action is needed right now</button>
+            </div>
             <textarea id="rf-nextsteps" class="form-input" rows="3" placeholder="e.g. I'd suggest discussing these results with your oncology team to plan next steps together."></textarea>
           </div>
 
           <div class="review-field">
             <label for="rf-questions">Questions to raise with your care team</label>
             <p class="rf-hint">Prompts the patient can bring to their next appointment.</p>
+            <div class="rf-options">
+              <button type="button" class="rf-chip" onclick="insertOption('rf-questions', this.textContent)">How does this subtype affect my treatment options?</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-questions', this.textContent)">Is any further testing recommended?</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-questions', this.textContent)">Are there clinical trials I could consider?</button>
+              <button type="button" class="rf-chip" onclick="insertOption('rf-questions', this.textContent)">What are the next steps in my care plan?</button>
+            </div>
             <textarea id="rf-questions" class="form-input" rows="3" placeholder="e.g. How does this subtype affect my treatment options? Is any further testing recommended?"></textarea>
           </div>
 
@@ -157,6 +182,22 @@ var REVIEW_FIELDS = [
   {id: 'rf-questions',  heading: 'Questions to raise with your care team'},
   {id: 'rf-comments',   heading: 'Additional comments'}
 ];
+
+function insertOption(fieldId, text) {
+  var el = document.getElementById(fieldId);
+  if (!el) return;
+  text = (text || '').trim();
+  var cur = el.value.trim();
+  if (cur.indexOf(text) !== -1) { el.focus(); return; }  // don't duplicate
+  if (cur) {
+    if (!/[.!?]$/.test(cur)) cur += '.';
+    el.value = cur + ' ' + text;
+  } else {
+    el.value = text;
+  }
+  el.focus();
+  el.setSelectionRange(el.value.length, el.value.length);
+}
 
 function composeReview() {
   var parts = [];

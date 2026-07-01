@@ -12,6 +12,7 @@
     {% set is_patient = (user.get('role') == 'patient') %}
     {% set is_guest = user.get('is_guest', False) %}
     {% set scolor = info.get('color', 'var(--lumi-pink)') %}
+    {% set spastel = info.get('pastel', '#F2C6DE') %}
 
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-8);flex-wrap:wrap;gap:var(--sp-4);">
@@ -31,7 +32,7 @@
     </div>
 
     <!-- Result Banner -->
-    <div class="result-banner" style="border-color:{{ scolor }};">
+    <div class="result-banner" style="border-color:{{ scolor }};background:linear-gradient(135deg, {{ spastel }} 0%, var(--lumi-blush-half) 100%);">
       <p class="result-banner-eyebrow">
         {% if is_patient %}Your TNBC Subtype{% else %}Predicted Molecular Subtype{% endif %}
       </p>
@@ -40,7 +41,7 @@
       </h1>
       <p class="result-banner-sub">Triple-Negative Breast Cancer Molecular Subtype</p>
       <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;">
-        <span class="badge badge-success" style="padding:8px 20px;font-size:14px;">Confidence: {{ result.confidence }}%</span>
+        <span class="badge" style="padding:8px 20px;font-size:14px;background:{{ spastel }};color:{{ scolor }};font-weight:600;">Confidence: {{ result.confidence }}%</span>
         <span class="badge badge-{% if result.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}" style="padding:8px 20px;font-size:14px;">{{ 'AI Classification' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Approximation' }}</span>
       </div>
       {% if result.method == 'clinical_rules' %}

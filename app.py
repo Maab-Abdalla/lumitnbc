@@ -201,7 +201,7 @@ def current_user():
 # ── Static data ───────────────────────────────────────────────────────────────
 
 SUBTYPE_INFO = {
-    "BL1": {"full_name": "Basal-Like 1", "color": "#D75DA6",
+    "BL1": {"full_name": "Basal-Like 1", "color": "#C85C90", "pastel": "#F2C6DE",
              "key_pathways": "Cell cycle, DNA damage response, proliferation",
              "clinical_relevance": "Highest pCR to neoadjuvant chemotherapy",
              "description": "BL1 tumours are characterised by high proliferation rates and active DNA damage response pathways. They typically show the best response to platinum-based chemotherapy and PARP inhibitors.",
@@ -209,21 +209,21 @@ SUBTYPE_INFO = {
              "patient_summary": "Your tumour belongs to the Basal-Like 1 group. These tumours tend to grow quickly, but that same fast growth often makes them respond very well to chemotherapy.",
              "patient_meaning": "Because BL1 tumours are sensitive to common chemotherapy drugs (especially platinum-based ones), this subtype usually has one of the best responses to treatment given before surgery.",
              "patient_good_news": "BL1 has the highest rate of tumour shrinkage with standard chemotherapy compared with the other TNBC subtypes."},
-    "BL2": {"full_name": "Basal-Like 2", "color": "#ECA3BF",
+    "BL2": {"full_name": "Basal-Like 2", "color": "#C97F4E", "pastel": "#F7D9C4",
              "key_pathways": "Growth factor signalling, glycolysis, myoepithelial markers",
              "clinical_relevance": "Growth factor pathway targets; lower pCR than BL1",
              "description": "BL2 tumours show enrichment in growth factor signalling and metabolic pathways. They may respond to therapies targeting growth factor receptors and metabolic pathways.",
              "patient_summary": "Your tumour belongs to the Basal-Like 2 group. These tumours rely on growth-signal and energy pathways that researchers are actively learning to target.",
              "patient_meaning": "BL2 tumours use specific 'growth signals' to grow. This opens the door to treatments that aim to block those signals, often alongside standard chemotherapy.",
              "patient_good_news": "Knowing your tumour is BL2 helps your care team consider therapies matched to its growth pathways."},
-    "LAR": {"full_name": "Luminal Androgen Receptor", "color": "#4A8EC2",
+    "LAR": {"full_name": "Luminal Androgen Receptor", "color": "#4A8EC2", "pastel": "#C6DEF1",
              "key_pathways": "Androgen receptor, luminal-like, PI3K/AKT",
              "clinical_relevance": "Anti-androgen therapy, CDK4/6 inhibitors",
              "description": "LAR tumours express high levels of androgen receptor and show luminal-like gene expression. They may benefit from anti-androgen therapies (e.g., enzalutamide) and PI3K/AKT pathway inhibitors.",
              "patient_summary": "Your tumour belongs to the Luminal Androgen Receptor group. These tumours respond to a hormone signal (the androgen receptor), which gives extra treatment options beyond chemotherapy.",
              "patient_meaning": "LAR tumours are driven partly by a hormone pathway. This means medicines that block that hormone signal (similar in idea to hormone therapies) may be useful for you.",
              "patient_good_news": "This subtype often grows more slowly than other TNBC types and has additional targeted treatment options."},
-    "M":   {"full_name": "Mesenchymal", "color": "#28A745",
+    "M":   {"full_name": "Mesenchymal", "color": "#3E9B85", "pastel": "#C9E4DE",
              "key_pathways": "EMT, cell motility, Wnt/TGF-β signalling",
              "clinical_relevance": "EMT-targeted therapies, anti-angiogenics",
              "description": "Mesenchymal tumours are enriched for epithelial-to-mesenchymal transition (EMT) and cell motility pathways. They may respond to anti-angiogenic therapies and EMT-targeted approaches.",
@@ -387,12 +387,12 @@ TNBC_HIGHLIGHTS = [
      "title": "What makes triple-negative breast cancer different",
      "summary": "TNBC lacks the three receptors (ER, PR, HER2) that many breast cancer treatments target, which is why molecular subtyping matters for planning care.",
      "source": "Breast Cancer Now",
-     "url": "https://breastcancernow.org/about-breast-cancer/what-is-breast-cancer/triple-negative-breast-cancer/"},
+     "url": "https://breastcancernow.org/about-breast-cancer/diagnosis/types-of-breast-cancer/triple-negative-breast-cancer"},
     {"tag": "Treatment",
      "title": "Immunotherapy and targeted options in TNBC",
      "summary": "Research into immunotherapy, PARP inhibitors and antibody-drug conjugates continues to expand treatment options for some people with TNBC.",
      "source": "National Cancer Institute",
-     "url": "https://www.cancer.gov/types/breast/patient/triple-negative-treatment-pdq"},
+     "url": "https://www.cancer.gov/types/breast/breast-cancer-types/triple-negative"},
     {"tag": "Clinical trials",
      "title": "Finding a clinical trial that fits your profile",
      "summary": "Molecular subtype can affect trial eligibility. ClinicalTrials.gov lists actively recruiting studies you can discuss with your care team.",
@@ -1011,7 +1011,8 @@ def _register_routes(app):
         if not message:
             return jsonify({"reply": "Please type a question.", "source": "system"})
 
-        result = chatbot_llm.generate_reply(message, history)
+        result = chatbot_llm.generate_reply(message, history,
+                                            role=session.get("role", "patient"))
         if result.get("enabled") and result.get("reply"):
             return jsonify({"reply": result["reply"], "source": "llm"})
 
