@@ -209,11 +209,11 @@
             {% set ns = namespace(supporting=0) %}
             {% for r in patient_reasons %}
               {% if r.supports %}{% set ns.supporting = ns.supporting + 1 %}{% endif %}
-              <div style="padding:var(--sp-4) var(--sp-5);background:{% if r.supports %}rgba(196,110,156,0.05){% else %}rgba(94,147,190,0.06){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
+              <div style="padding:var(--sp-4) var(--sp-5);background:{% if r.supports %}rgba(224,153,94,0.06){% else %}rgba(139,147,167,0.07){% endif %};border-radius:var(--r-input);margin-bottom:var(--sp-3);border-left:3px solid {% if r.supports %}var(--shap-toward){% else %}var(--shap-away){% endif %};">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:var(--sp-3);">
-                  <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:{% if r.supports %}var(--lumi-success){% else %}var(--lumi-blue){% endif %};flex-shrink:0;"></span>
+                  <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:{% if r.supports %}var(--shap-toward){% else %}var(--shap-away){% endif %};flex-shrink:0;"></span>
                   <span style="font-weight:700;font-size:14px;color:var(--lumi-navy);">{{ r.tier }}</span>
-                  <span style="margin-left:auto;font-size:12px;font-weight:600;color:{% if r.supports %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};white-space:nowrap;">{% if r.supports %}+{% else %}−{% endif %}{{ r.magnitude }}</span>
+                  <span style="margin-left:auto;font-size:12px;font-weight:600;color:{% if r.supports %}var(--shap-toward){% else %}var(--shap-away){% endif %};white-space:nowrap;">{% if r.supports %}+{% else %}−{% endif %}{{ r.magnitude }}</span>
                 </div>
                 <div style="font-size:14px;font-weight:600;color:var(--lumi-navy);margin-bottom:2px;">{{ r.label }}</div>
                 {% if r.gene %}<div style="font-family:var(--font-mono,monospace);font-size:12px;color:var(--lumi-muted);margin-bottom:6px;">Gene: {{ r.gene }}</div>{% endif %}
@@ -391,12 +391,12 @@
                 <span style="font-weight:500;font-size:13px;font-family:monospace;">
                   {{ f.gene }}{% if f.is_clinical %} <span style="font-size:10px;color:var(--lumi-slate);font-family:sans-serif;">[clinical]</span>{% endif %}
                 </span>
-                <span style="font-weight:600;font-size:13px;color:{% if f.shap_value>0 %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};">
+                <span style="font-weight:600;font-size:13px;color:{% if f.shap_value>0 %}var(--shap-toward){% else %}var(--shap-away){% endif %};">
                   {% if f.shap_value>0 %}+{% endif %}{{ f.shap_value }}
                   <span style="font-size:11px;color:var(--lumi-slate);font-weight:400;"> (expr: {{ f.expression }})</span>
                 </span>
               </div>
-              <div class="progress"><div class="progress-bar" style="width:{{ (f.abs_shap/mx*100)|round }}%;background:{% if f.shap_value>0 %}var(--lumi-pink){% else %}var(--lumi-blue){% endif %};"></div></div>
+              <div class="progress"><div class="progress-bar" style="width:{{ (f.abs_shap/mx*100)|round }}%;background:{% if f.shap_value>0 %}var(--shap-toward){% else %}var(--shap-away){% endif %};"></div></div>
             </div>
             {% endfor %}
           {% elif result.top_reasons %}
@@ -670,7 +670,7 @@
         labels: shap.map(function (s) { return s.label; }),
         datasets: [{
           data: shap.map(function (s) { return s.signed; }),
-          backgroundColor: shap.map(function (s) { return s.supports ? '#C46E9C' : '#5E93BE'; }),
+          backgroundColor: shap.map(function (s) { return s.supports ? '#E0995E' : '#8B93A7'; }),
           borderRadius: 4,
           barThickness: 18
         }]

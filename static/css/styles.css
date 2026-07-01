@@ -26,14 +26,18 @@
   --lumi-danger:      #E23B4A;
 
   /* --- Subtype (soft palette hues: readable text shade + pastel accent) --- */
-  --sub-bl1:          #C85C90;   /* pink   (text)   */
-  --sub-bl1-soft:     #F2C6DE;   /* pink   (pastel) */
-  --sub-bl2:          #C97F4E;   /* peach  (text)   */
-  --sub-bl2-soft:     #F7D9C4;   /* peach  (pastel) */
-  --sub-lar:          #4A8EC2;   /* sky    (text)   */
-  --sub-lar-soft:     #C6DEF1;   /* sky    (pastel) */
-  --sub-m:            #3E9B85;   /* mint   (text)   */
-  --sub-m-soft:       #C9E4DE;   /* mint   (pastel) */
+  --sub-bl1:          #D082A8;   /* pink     (text, softened) */
+  --sub-bl1-soft:     #F2C6DE;   /* pink     (pastel) */
+  --sub-bl2:          #8A6FB0;   /* lavender (text)   */
+  --sub-bl2-soft:     #DBCDF0;   /* lavender (pastel) */
+  --sub-lar:          #4A8EC2;   /* sky      (text)   */
+  --sub-lar-soft:     #C6DEF1;   /* sky      (pastel) */
+  --sub-m:            #3E9B85;   /* mint     (text)   */
+  --sub-m-soft:       #C9E4DE;   /* mint     (pastel) */
+
+  /* --- SHAP direction (subtype-independent, so it never clashes with identity colours) --- */
+  --shap-toward:      #E0995E;   /* warm amber: pushed toward the result */
+  --shap-away:        #8B93A7;   /* muted slate: pushed away */
 
   /* --- Spacing (8px base) --- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;  --sp-4: 16px;
@@ -985,9 +989,14 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
   font-size: 18px; color: var(--lumi-navy); margin-bottom: var(--sp-5);
 }
 :root[data-theme="dark"] .result-banner {
-  background: linear-gradient(135deg, #241B22 0%, #1B2430 100%);
+  /* Override the inline per-subtype pastel gradient (built for light mode):
+     on dark, a flat surface keeps the heading + border colour legible. */
+  background: var(--lumi-white) !important;
 }
 :root[data-theme="dark"] .result-banner-sub { color: var(--lumi-slate); }
+:root[data-theme="dark"] .subtype-banner {
+  background: var(--lumi-white) !important;
+}
 
 /* ============================================================
    RESOURCES (horizontal-scroll cards)

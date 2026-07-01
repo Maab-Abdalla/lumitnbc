@@ -201,7 +201,7 @@ def current_user():
 # ── Static data ───────────────────────────────────────────────────────────────
 
 SUBTYPE_INFO = {
-    "BL1": {"full_name": "Basal-Like 1", "color": "#C85C90", "pastel": "#F2C6DE",
+    "BL1": {"full_name": "Basal-Like 1", "color": "#D082A8", "pastel": "#F2C6DE",
              "key_pathways": "Cell cycle, DNA damage response, proliferation",
              "clinical_relevance": "Highest pCR to neoadjuvant chemotherapy",
              "description": "BL1 tumours are characterised by high proliferation rates and active DNA damage response pathways. They typically show the best response to platinum-based chemotherapy and PARP inhibitors.",
@@ -209,7 +209,7 @@ SUBTYPE_INFO = {
              "patient_summary": "Your tumour belongs to the Basal-Like 1 group. These tumours tend to grow quickly, but that same fast growth often makes them respond very well to chemotherapy.",
              "patient_meaning": "Because BL1 tumours are sensitive to common chemotherapy drugs (especially platinum-based ones), this subtype usually has one of the best responses to treatment given before surgery.",
              "patient_good_news": "BL1 has the highest rate of tumour shrinkage with standard chemotherapy compared with the other TNBC subtypes."},
-    "BL2": {"full_name": "Basal-Like 2", "color": "#C97F4E", "pastel": "#F7D9C4",
+    "BL2": {"full_name": "Basal-Like 2", "color": "#8A6FB0", "pastel": "#DBCDF0",
              "key_pathways": "Growth factor signalling, glycolysis, myoepithelial markers",
              "clinical_relevance": "Growth factor pathway targets; lower pCR than BL1",
              "description": "BL2 tumours show enrichment in growth factor signalling and metabolic pathways. They may respond to therapies targeting growth factor receptors and metabolic pathways.",
