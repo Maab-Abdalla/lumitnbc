@@ -35,7 +35,7 @@
     </p>
 
     {% if resource_videos %}
-    <div class="reveal" style="margin-bottom:var(--sp-8);">
+    <div id="videos" class="reveal" style="margin-bottom:var(--sp-8);scroll-margin-top:90px;">
       <h2 style="font-size:18px;margin-bottom:var(--sp-4);">Videos</h2>
       <div class="hscroll">
         {% for v in resource_videos %}
@@ -64,7 +64,8 @@
     {% set cat_colors = {'Understanding TNBC':'var(--lumi-pink)', 'Support & Community':'var(--lumi-blue)'} %}
     {% for group in resource_links %}
     {% set gc = cat_colors.get(group.category, 'var(--lumi-pink)') %}
-    <div class="reveal" style="margin-bottom:var(--sp-8);">
+    {% set cat_slug = group.category | lower | replace(' & ', '-') | replace(' ', '-') %}
+    <div id="{{ cat_slug }}" class="reveal" style="margin-bottom:var(--sp-8);scroll-margin-top:90px;">
       <h2 style="font-size:18px;margin-bottom:var(--sp-4);">{{ group.category }}</h2>
 
       <div class="hscroll">

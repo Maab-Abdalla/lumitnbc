@@ -183,6 +183,25 @@ a:hover { opacity: 0.88; }
 /* Small (badges/pills) */
 .btn-sm { padding: 8px 20px; font-size: 14px; }
 
+/* Structured provider review form */
+.review-field { margin-bottom: var(--sp-5); }
+.review-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lumi-navy);
+  margin-bottom: 2px;
+}
+.review-field .req { color: var(--lumi-pink); font-weight: 700; }
+.review-field .opt { color: var(--lumi-muted); font-weight: 400; font-size: 12.5px; }
+.review-field .rf-hint {
+  font-size: 12.5px;
+  color: var(--lumi-muted);
+  margin: 0 0 var(--sp-2);
+  line-height: 1.4;
+}
+.review-field textarea { resize: vertical; margin: 0; }
+
 /* Review helper snippet chips */
 .snippet-chip {
   font: inherit;
@@ -254,6 +273,70 @@ a:hover { opacity: 0.88; }
 .flip-a { font-size: 13.5px; color: var(--lumi-slate); line-height: 1.55; margin: 0; }
 .flip-cue { margin-top: auto; font-size: 12px; color: var(--lumi-muted); }
 :root[data-theme="dark"] .flip-front { background: var(--lumi-white); }
+
+/* Home "Explore resources" shortcut cards */
+.shortcut-card { display: flex; flex-direction: column; }
+.shortcut-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, var(--lumi-blush) 0%, var(--lumi-blush-half) 100%);
+  overflow: hidden;
+}
+.shortcut-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Favicons are small logos: don't stretch — center on a soft panel */
+.shortcut-thumb-favicon { display: flex; align-items: center; justify-content: center; }
+.shortcut-thumb-favicon img {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: var(--lumi-white);
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(17,53,90,0.10);
+}
+/* Fallback when a favicon/thumbnail fails to load */
+.shortcut-thumb-fallback::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--lumi-blush) 0%, var(--lumi-blush-half) 100%);
+}
+
+/* Accent card whose left border stays flush with the rounded corners */
+.note-accent { position: relative; overflow: hidden; }
+.note-accent::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--lumi-blue);
+}
+
+/* FAQ accordion (About page) */
+.faq-item { }
+.faq-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-6);
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--lumi-navy);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.faq-summary::-webkit-details-marker { display: none; }
+.faq-summary:hover { background: var(--lumi-blush-half); color: var(--lumi-pink); }
+.faq-chevron { flex-shrink: 0; color: var(--lumi-pink); transition: transform 0.25s ease; }
+.faq-item[open] > .faq-summary { color: var(--lumi-pink); }
+.faq-item[open] > .faq-summary .faq-chevron { transform: rotate(180deg); }
+.faq-answer {
+  padding: 0 var(--sp-6) var(--sp-5);
+  font-size: 14px;
+  color: var(--lumi-slate);
+  line-height: 1.65;
+}
 
 @media (max-width: 720px) {
   .btn-lg { width: 100%; }

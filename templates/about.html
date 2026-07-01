@@ -18,7 +18,7 @@
 
     <!-- Who it's for -->
     <h2 class="reveal" style="--delay:0.06s; font-size:22px;color:var(--lumi-navy);margin-bottom:var(--sp-4);">Who it's for</h2>
-    <div class="grid grid-3" style="margin-bottom:var(--sp-10);">
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--sp-5);margin-bottom:var(--sp-10);">
       <div class="card reveal" style="--delay:0.1s;">
         <div class="card-body" style="padding:var(--sp-6);">
           <div class="feature-icon" style="margin-bottom:var(--sp-3);">
@@ -35,15 +35,6 @@
           </div>
           <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Providers</h3>
           <p style="font-size:13.5px;color:var(--lumi-slate);line-height:1.55;margin:0;">Review classifications with feature-level detail and send feedback to patients.</p>
-        </div>
-      </div>
-      <div class="card reveal" style="--delay:0.26s;">
-        <div class="card-body" style="padding:var(--sp-6);">
-          <div class="feature-icon" style="margin-bottom:var(--sp-3);">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          </div>
-          <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Administrators</h3>
-          <p style="font-size:13.5px;color:var(--lumi-slate);line-height:1.55;margin:0;">Manage users and models and oversee the system's health.</p>
         </div>
       </div>
     </div>
@@ -85,27 +76,21 @@
 
     <!-- FAQ flip cards -->
     <h2 class="reveal" style="--delay:0.4s; font-size:22px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Frequently asked questions</h2>
-    <p class="reveal" style="--delay:0.42s; font-size:13px;color:var(--lumi-muted);margin-bottom:var(--sp-4);">Tap a card to see the answer.</p>
-    <div class="grid grid-3" style="margin-bottom:var(--sp-10);">
+    <p class="reveal" style="--delay:0.42s; font-size:13px;color:var(--lumi-muted);margin-bottom:var(--sp-4);">Click a question to expand the answer.</p>
+    <div class="card reveal" style="--delay:0.44s; margin-bottom:var(--sp-10); overflow:hidden;">
       {% for f in (about_faqs + general_faqs) %}
-      <div class="flip-card reveal" style="--delay:{{ 0.44 + loop.index0 * 0.06 }}s;" onclick="this.classList.toggle('flipped')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('flipped');}">
-        <div class="flip-inner">
-          <div class="flip-face flip-front">
-            <span class="flip-hint">Question</span>
-            <p class="flip-q">{{ f.q }}</p>
-            <span class="flip-cue">Tap to reveal ↻</span>
-          </div>
-          <div class="flip-face flip-back">
-            <span class="flip-hint">Answer</span>
-            <p class="flip-a">{{ f.a }}</p>
-          </div>
-        </div>
-      </div>
+      <details class="faq-item"{% if not loop.last %} style="border-bottom:1px solid rgba(196,110,156,0.1);"{% endif %}>
+        <summary class="faq-summary">
+          <span>{{ f.q }}</span>
+          <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </summary>
+        <div class="faq-answer">{{ f.a }}</div>
+      </details>
       {% endfor %}
     </div>
 
     <!-- Important note -->
-    <div class="card reveal" style="--delay:0.6s; border-left:4px solid var(--lumi-blue);">
+    <div class="card reveal note-accent" style="--delay:0.6s;">
       <div class="card-body" style="padding:var(--sp-7) var(--sp-8);">
         <h2 style="font-size:16px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">An important note</h2>
         <p style="font-size:14px;color:var(--lumi-slate);line-height:1.65;margin-bottom:0;">

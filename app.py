@@ -531,10 +531,36 @@ def _register_routes(app):
             "provider": url_for("provider_dashboard"),
             "admin": url_for("admin_dashboard"),
         }.get(role, url_for("dashboard"))
+        # Build the three "Explore resources" shortcut cards. Each uses the
+        # thumbnail of the FIRST item in its section and links to that section
+        # anchor on the resources page (not the generic page top).
+        res_url = url_for("resources")
+        shortcuts = []
+        if RESOURCE_VIDEOS:
+            shortcuts.append({
+                "label": "Videos", "anchor": "videos",
+                "desc": "Curated explainer videos on TNBC, subtypes, and what results mean.",
+                "thumb": youtube_thumb(RESOURCE_VIDEOS[0]["id"]), "kind": "image",
+            })
+        for group in RESOURCE_LINKS:
+            slug = group["category"].lower().replace(" & ", "-").replace(" ", "-")
+            first = group["items"][0] if group.get("items") else None
+            if group["category"] == "Understanding TNBC":
+                label, desc = "Understand", "Trusted, plain-language reading on triple-negative breast cancer."
+            elif group["category"].startswith("Support"):
+                label, desc = "Support", "Groups, helplines, and communities — including services in Malaysia."
+            else:
+                label, desc = group["category"], ""
+            shortcuts.append({
+                "label": label, "anchor": slug, "desc": desc,
+                "thumb": favicon_url(first["url"]) if first else None, "kind": "favicon",
+            })
+
         return render_template("home.html", user=user.to_dict(),
                                active_page="home", dashboard_url=dest,
                                highlights=TNBC_HIGHLIGHTS,
-                               resources_url=url_for("resources"))
+                               resources_url=res_url,
+                               resource_shortcuts=shortcuts)
 
     @app.route("/about")
     @login_required
