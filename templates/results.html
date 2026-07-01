@@ -26,7 +26,7 @@
         </p>
       </div>
       <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
-        <button onclick="window.print()" class="btn btn-outline btn-sm">Print Report</button>
+        <button onclick="printReport()" class="btn btn-outline btn-sm">Print Report</button>
         <a href="{{ url_for('classification') }}" class="btn btn-outline btn-sm">New Analysis</a>
       </div>
     </div>
@@ -85,7 +85,7 @@
       </div>
 
       <!-- ===== Overview ===== -->
-      <section id="sec-overview" class="result-section active" data-panel="overview">
+      <section id="sec-overview" class="result-section active" data-panel="overview" data-print-title="Overview">
       <div class="card" style="margin-bottom:var(--sp-6);border-top:4px solid {{ scolor }};">
         <div class="card-body" style="padding:var(--sp-8);">
           <h2 style="margin-bottom:var(--sp-3);">What this means for you</h2>
@@ -123,7 +123,7 @@
     </section>
 
     <!-- ===== Charts ===== -->
-    <section id="sec-charts" class="result-section" data-panel="charts">
+    <section id="sec-charts" class="result-section" data-panel="charts" data-print-title="Charts">
       <div class="grid grid-2" style="margin-bottom:var(--sp-6);">
         <!-- Confidence card -->
         {% if result.probabilities %}
@@ -132,18 +132,18 @@
           <div class="card-header"><h2 class="card-title mb-0">How sure is the model?</h2></div>
           <div class="card-body">
             <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--lumi-muted);font-weight:600;margin-bottom:6px;">Prediction</div>
-            <div style="font-size:22px;font-weight:700;color:{{ scolor }};line-height:1.2;margin-bottom:var(--sp-4);">
+            <div style="font-size:22px;font-weight:700;color:var(--lumi-navy);line-height:1.2;margin-bottom:var(--sp-4);">
               {{ info.get('full_name', result.subtype) }} ({{ result.subtype }})
             </div>
 
             <div style="display:flex;align-items:baseline;gap:var(--sp-3);margin-bottom:var(--sp-2);">
-              <span style="font-size:40px;font-weight:700;color:{{ scolor }};line-height:1;">{{ result.confidence }}%</span>
-              <span style="font-size:14px;font-weight:600;color:var(--lumi-slate);">{{ conf_label }}</span>
+              <span style="font-size:40px;font-weight:700;color:var(--conf-pct);line-height:1;">{{ result.confidence }}%</span>
+              <span style="font-size:14px;font-weight:600;color:var(--conf-label);">{{ conf_label }}</span>
             </div>
 
             <div style="font-size:12px;color:var(--lumi-muted);font-weight:600;margin:var(--sp-4) 0 6px;">Confidence Level</div>
             <div class="progress" style="height:18px;border-radius:999px;">
-              <div class="progress-bar" style="width:{{ result.confidence }}%;background:{{ scolor }};border-radius:999px;"></div>
+              <div class="progress-bar" style="width:{{ result.confidence }}%;background:var(--conf-grad);border-radius:999px;"></div>
             </div>
 
             <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin-top:var(--sp-4);margin-bottom:0;">
@@ -159,16 +159,27 @@
         </div>
         {% endif %}
 
-        <!-- What pushed the decision (diverging bar) -->
+        <!-- What pushed the decision (simple bars, coloured by direction) -->
         {% if patient_shap_chart %}
         <div class="card">
           <div class="card-header"><h2 class="card-title mb-0">What pushed the decision</h2></div>
           <div class="card-body">
-            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Each signal is placed by how strongly, and in which direction, it pushed the result. Bars to the right pushed toward {{ result.subtype }}; bars to the left pushed away.</p>
-            <div style="height:240px;position:relative;"><canvas id="shapBar"></canvas></div>
-            <div style="display:flex;justify-content:space-between;margin-top:var(--sp-2);font-size:12px;color:var(--lumi-slate);">
-              <span>&larr; Points away</span>
-              <span>Pushes toward {{ result.subtype }} &rarr;</span>
+            <p style="font-size:14px;color:var(--lumi-slate);margin-bottom:var(--sp-5);">These signals most influenced your result. Longer bars had more influence. Amber pushed toward {{ result.subtype }}; grey pushed away.</p>
+            {% set maxmag = patient_shap_chart|map(attribute='value')|max %}
+            {% for f in patient_shap_chart %}
+            <div style="margin-bottom:var(--sp-4);">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+                <span style="font-size:14px;font-weight:500;color:var(--lumi-navy);">{{ f.label }}</span>
+                <span style="font-size:13px;font-weight:600;color:{% if f.supports %}var(--shap-toward){% else %}var(--shap-away){% endif %};white-space:nowrap;">{% if f.supports %}+{% else %}−{% endif %}{{ f.value }}</span>
+              </div>
+              <div class="progress" style="height:12px;border-radius:999px;">
+                <div class="progress-bar" style="width:{{ (f.value / maxmag * 100)|round if maxmag else 0 }}%;background:{% if f.supports %}var(--shap-toward){% else %}var(--shap-away){% endif %};border-radius:999px;"></div>
+              </div>
+            </div>
+            {% endfor %}
+            <div style="display:flex;gap:var(--sp-4);margin-top:var(--sp-4);font-size:12px;color:var(--lumi-slate);">
+              <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--shap-toward);display:inline-block;"></span>Pushed toward {{ result.subtype }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:3px;background:var(--shap-away);display:inline-block;"></span>Pushed away</span>
             </div>
           </div>
         </div>
@@ -200,7 +211,7 @@
     </section>
 
     <!-- ===== Factors ===== -->
-    <section id="sec-factors" class="result-section" data-panel="factors">
+    <section id="sec-factors" class="result-section" data-panel="factors" data-print-title="Factors">
       <div class="card">
         <div class="card-header"><h2 class="card-title mb-0">Why the model decided this</h2></div>
         <div class="card-body">
@@ -243,7 +254,7 @@
     </section>
 
     <!-- ===== Clinical Trials ===== -->
-    <section id="sec-trials" class="result-section" data-panel="trials">
+    <section id="sec-trials" class="result-section" data-panel="trials" data-print-title="Clinical Trials">
       <div class="card">
         <div class="card-header">
           <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -295,7 +306,7 @@
     </section>
 
     <!-- ===== Review My Result (moved to after trials) ===== -->
-    <section id="sec-review" class="result-section" data-panel="review">
+    <section id="sec-review" class="result-section" data-panel="review" data-print-title="Provider Review">
       {% if is_guest %}
       <div class="card" style="border-left:4px solid var(--lumi-blue);">
         <div class="card-body" style="padding:var(--sp-6);">
@@ -648,62 +659,8 @@
 (function () {
   var data = JSON.parse(document.getElementById('chartData').textContent);
 
-  // Chart instances (resized when their tab opens, since hidden canvases
-  // can't size themselves).
-  var _charts = [];
-
-  // ── Diverging bar: what pushed the decision ─────────────────────────
-  var bar = document.getElementById('shapBar');
-  if (bar && window.Chart && data.shap && data.shap.length) {
-    // Sort so the largest pushes (either direction) read top-to-bottom.
-    var shap = data.shap.slice().sort(function (a, b) {
-      return Math.abs(b.signed) - Math.abs(a.signed);
-    });
-    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    var zeroLine = isDark ? '#3A4654' : '#C9D4DE';
-    // Symmetric axis around zero so the centre line sits in the middle.
-    var maxMag = Math.max.apply(null, shap.map(function (s) { return Math.abs(s.signed); }));
-    maxMag = maxMag > 0 ? maxMag * 1.15 : 1;
-    _charts.push(new Chart(bar, {
-      type: 'bar',
-      data: {
-        labels: shap.map(function (s) { return s.label; }),
-        datasets: [{
-          data: shap.map(function (s) { return s.signed; }),
-          backgroundColor: shap.map(function (s) { return s.supports ? '#E0995E' : '#8B93A7'; }),
-          borderRadius: 4,
-          barThickness: 18
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function (c) {
-                var v = c.parsed.x;
-                return (v >= 0 ? 'Pushed toward (+' : 'Pushed away (') + v.toFixed(3) + ')';
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            min: -maxMag, max: maxMag,
-            grid: {
-              color: function (ctx) { return ctx.tick.value === 0 ? zeroLine : 'transparent'; },
-              lineWidth: function (ctx) { return ctx.tick.value === 0 ? 2 : 0; }
-            },
-            ticks: { display: false }
-          },
-          y: { ticks: { font: { size: 12 } }, grid: { display: false } }
-        }
-      }
-    }));
-  }
+  // The "what pushed the decision" chart is now pure HTML/CSS bars rendered
+  // server-side, so there is no canvas chart to build or resize here.
 
   // ── LLM layer: personalised summary (only if enabled server-side) ───
   if (data.llmEnabled && data.analysisId) {
@@ -736,14 +693,37 @@
         panels.forEach(function (p) {
           p.classList.toggle('active', p.getAttribute('data-panel') === name);
         });
-        // Charts can't size while hidden; resize them once their panel shows.
-        if (name === 'charts') {
-          requestAnimationFrame(function () {
-            _charts.forEach(function (ch) { try { ch.resize(); } catch (e) {} });
-          });
-        }
       });
     });
+
+    // ── Print the FULL report (all tabs), not just the open one ──────────
+    // The print stylesheet reveals every .result-section. All charts are now
+    // plain HTML/CSS, so they print correctly with no canvas resizing needed.
+    var _printActive = null;
+    function prepareForPrint() {
+      _printActive = null;
+      panels.forEach(function (p) {
+        if (p.classList.contains('active')) _printActive = p.getAttribute('data-panel');
+        p.classList.add('active');
+      });
+    }
+    function restoreAfterPrint() {
+      if (_printActive === null) return;
+      panels.forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-panel') === _printActive);
+      });
+    }
+    window.addEventListener('beforeprint', prepareForPrint);
+    window.addEventListener('afterprint', restoreAfterPrint);
+    // Expose an explicit handler so the button can guarantee prep runs first
+    // (beforeprint alone can fire too late for canvas rendering in some browsers).
+    window.printReport = function () {
+      prepareForPrint();
+      // Give the browser a frame to paint the now-visible charts before printing.
+      requestAnimationFrame(function () {
+        setTimeout(function () { window.print(); }, 120);
+      });
+    };
   })();
 
   {% if not user.get('is_guest') %}

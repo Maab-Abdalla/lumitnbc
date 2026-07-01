@@ -39,6 +39,11 @@
   --shap-toward:      #E0995E;   /* warm amber: pushed toward the result */
   --shap-away:        #8B93A7;   /* muted slate: pushed away */
 
+  /* --- Confidence card (fixed for every subtype; multi-hue so it isn't monochromatic) --- */
+  --conf-pct:         #4A8EC2;   /* blue  : the big percentage */
+  --conf-label:       #3E9B85;   /* mint  : the confidence label */
+  --conf-grad:        linear-gradient(90deg, #F2C6DE 0%, #C6DEF1 38%, #FAEDCB 68%, #C9E4DE 100%);
+
   /* --- Spacing (8px base) --- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;  --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-8: 32px;  --sp-10: 40px;
@@ -719,11 +724,32 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
   .header,
   .btn,
   button,
+  .result-tabbar,
   .chatbot-toggle,
   .chatbot-window { display: none !important; }
 
   body { background: #fff !important; }
   main { padding: 0 !important; }
+
+  /* Print the FULL report: reveal every tab section, not just the open one. */
+  .result-section { display: block !important; animation: none !important; }
+  .result-section + .result-section { margin-top: var(--sp-8); break-before: auto; }
+  /* Label each section on paper (its tab name is otherwise lost). */
+  .result-section::before {
+    content: attr(data-print-title);
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #11355A;
+    margin-bottom: var(--sp-3);
+    padding-bottom: var(--sp-2);
+    border-bottom: 2px solid #eee;
+  }
+  /* Reveal any content gated behind scroll-in animations so it prints. */
+  .reveal, .animate-in { opacity: 1 !important; transform: none !important; }
+
   .card,
   .stat-card { box-shadow: none !important; border: 1px solid #e5e5e5 !important; break-inside: avoid; }
   a { text-decoration: none !important; color: inherit !important; }

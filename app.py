@@ -654,6 +654,15 @@ def _register_routes(app):
             # Nothing to show: guests go to upload, logged-in users likewise.
             return redirect(url_for("classification"))
 
+        # Stored analyses (and guest results) don't carry matched trials in their
+        # dict, so populate them here. Without this the template's result.trials
+        # reference raises and the page 500s.
+        if "trials" not in result:
+            try:
+                result["trials"] = clinical_trials.get_trials(result.get("subtype", ""))
+            except Exception:
+                result["trials"] = []
+
         return render_template("results.html", result=result,
                                analysis_id=analysis_id,
                                subtype_info=SUBTYPE_INFO,
