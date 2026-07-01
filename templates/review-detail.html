@@ -25,10 +25,10 @@
 
     {% if result %}
     <!-- AI classification summary -->
-    <div class="subtype-banner" style="background:linear-gradient(135deg,{{ spastel }} 0%,var(--lumi-blush-half) 100%);border:2px solid {{ scolor }};border-radius:var(--r-feat);padding:var(--sp-6);margin-bottom:var(--sp-6);text-align:center;">
+    <div class="subtype-banner" style="background:linear-gradient(135deg,#F2C6DE 0%,var(--lumi-blush-half) 100%);border:2px solid var(--lumi-pink);border-radius:var(--r-feat);padding:var(--sp-6);margin-bottom:var(--sp-6);text-align:center;">
       <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--lumi-slate);margin-bottom:var(--sp-1);font-weight:600;">AI Predicted Subtype</p>
       <h2 style="font-size:30px;color:{{ scolor }};margin-bottom:var(--sp-2);">{{ info.get('full_name', result.subtype) }} ({{ result.subtype }})</h2>
-      <span class="badge" style="background:{{ spastel }};color:{{ scolor }};font-weight:600;">Confidence {{ result.confidence }}%</span>
+      <span class="badge badge-success" style="font-weight:600;">Confidence {{ result.confidence }}%</span>
       <span class="badge badge-{% if result.method in ['xgboost_ml','hybrid_ml'] %}primary{% else %}info{% endif %}">{{ 'AI Model' if result.method in ['xgboost_ml','hybrid_ml'] else 'Clinical Rules' }}</span>
     </div>
 

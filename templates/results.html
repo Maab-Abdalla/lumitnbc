@@ -31,8 +31,9 @@
       </div>
     </div>
 
-    <!-- Result Banner -->
-    <div class="result-banner" style="border-color:{{ scolor }};background:linear-gradient(135deg, {{ spastel }} 0%, var(--lumi-blush-half) 100%);">
+    <!-- Result Banner: card + border are a fixed pink for every subtype;
+         only the subtype name below carries the per-subtype colour. -->
+    <div class="result-banner" style="border-color:var(--lumi-pink);background:linear-gradient(135deg, #F2C6DE 0%, var(--lumi-blush-half) 100%);">
       <p class="result-banner-eyebrow">
         {% if is_patient %}Your TNBC Subtype{% else %}Predicted Molecular Subtype{% endif %}
       </p>
