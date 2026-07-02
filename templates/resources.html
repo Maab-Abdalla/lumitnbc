@@ -93,17 +93,7 @@
     </div>
     {% endfor %}
 
-    <div class="card mb-6 reveal">
-      <div class="card-header"><h2 class="card-title mb-0">Frequently asked questions</h2></div>
-      <div class="card-body">
-        {% for f in general_faqs %}
-        <div style="margin-bottom:var(--sp-5);{% if not loop.last %}padding-bottom:var(--sp-5);border-bottom:1px solid rgba(196,110,156,0.1);{% endif %}">
-          <h3 style="font-size:15px;margin-bottom:var(--sp-2);color:var(--lumi-navy);">{{ f.q }}</h3>
-          <p style="font-size:14px;color:var(--lumi-slate);line-height:1.6;margin:0;">{{ f.a }}</p>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
+
 
     <div class="info-panel" style="font-size:13px;">
       The organisations linked here are independent; LumiTNBC is not affiliated with them and is not responsible for their content. Always discuss your care with a qualified healthcare professional.
