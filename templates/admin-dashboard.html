@@ -75,9 +75,26 @@
         <div id="model-info" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--sp-3);margin-bottom:var(--sp-4);">
           <div style="font-size:13px;color:var(--lumi-muted);">Loading model details…</div>
         </div>
-        <button onclick="validateModel()" class="btn btn-outline" id="validate-btn">Validate model</button>
+        <button onclick="validateModel()" class="btn btn-outline" id="validate-btn">Validate current model</button>
         <div id="validate-result" style="margin-top:var(--sp-4);"></div>
-        <p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-4);margin-bottom:0;">To update the model, commit a new model file to the repository and redeploy; the new model loads on startup.</p>
+
+        <hr style="border:none;border-top:1px solid rgba(196,110,156,0.12);margin:var(--sp-5) 0;">
+        <h3 style="font-size:15px;color:var(--lumi-navy);margin-bottom:var(--sp-2);">Test a candidate model</h3>
+        <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-3);">Upload a candidate model file (.joblib/.pkl) to validate it and run the reference test suite <em>without</em> affecting the live model. This checks format, size, feature contract, and reference-sample accuracy.</p>
+        <input type="file" id="candidate-file" accept=".joblib,.pkl" style="font-size:13px;margin-bottom:var(--sp-3);display:block;">
+        <button onclick="validateCandidate()" class="btn btn-outline" id="candidate-btn">Validate candidate</button>
+        <div id="candidate-result" style="margin-top:var(--sp-4);"></div>
+        <p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-4);margin-bottom:0;">To deploy a validated model, replace <code>models/hybrid_model.joblib</code> in the deployment and redeploy; it loads on startup. Live hot-swap and A/B traffic routing aren't available on this single-instance setup.</p>
+      </div>
+    </div>
+
+    <!-- Clinical Trials -->
+    <div class="card mt-6 reveal">
+      <div class="card-header"><h2 class="card-title mb-0">Clinical Trials</h2></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--lumi-slate);margin-bottom:var(--sp-4);">Trials are served live from the ClinicalTrials.gov API (cached for a day) with a curated fallback. Refreshing re-queries every subtype now, retrying up to 3 times each, and reports what came back. There is no local trials table to diff into, so this reflects the live fetch result per subtype.</p>
+        <button onclick="refreshTrials()" class="btn btn-outline" id="refresh-trials-btn">Refresh clinical trials</button>
+        <div id="trials-result" style="margin-top:var(--sp-4);"></div>
       </div>
     </div>
 
@@ -138,7 +155,69 @@ async function validateModel() {
   } catch (e) {
     box.innerHTML = '<div style="font-size:13px;color:var(--lumi-danger,#C0392B);">Validation request failed.</div>';
   }
-  btn.disabled = false; btn.textContent = 'Validate model';
+  btn.disabled = false; btn.textContent = 'Validate current model';
+}
+
+function renderChecks(d) {
+  var items = (d.checks || []).map(function (c) {
+    var color = c.ok ? 'var(--lumi-success)' : 'var(--lumi-danger,#C0392B)';
+    var mark = c.ok ? '✓' : '✕';
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;">' +
+      '<span style="color:' + color + ';font-weight:700;">' + mark + '</span>' +
+      '<span style="color:var(--lumi-navy);">' + c.name + (c.detail ? ' <span style="color:var(--lumi-muted);">— ' + c.detail + '</span>' : '') + '</span></div>';
+  }).join('');
+  var banner = '<div style="padding:var(--sp-3) var(--sp-4);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-weight:600;font-size:14px;background:' +
+    (d.valid ? 'rgba(44,156,132,0.12);color:var(--lumi-success);' : 'rgba(192,57,43,0.10);color:var(--lumi-danger,#C0392B);') + '">' +
+    (d.valid ? 'Candidate passed all checks.' : 'Candidate failed one or more checks.') + '</div>';
+  return banner + items;
+}
+
+async function validateCandidate() {
+  var btn = document.getElementById('candidate-btn');
+  var box = document.getElementById('candidate-result');
+  var fileEl = document.getElementById('candidate-file');
+  if (!fileEl.files || !fileEl.files[0]) { showToast('Choose a model file first.', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Validating…'; box.innerHTML = '';
+  try {
+    var fd = new FormData();
+    fd.append('model', fileEl.files[0]);
+    var r = await fetch('/api/admin/model/validate-upload', {method: 'POST', body: fd});
+    var d = await r.json();
+    if (!d.success) { box.innerHTML = '<div style="font-size:13px;color:var(--lumi-danger,#C0392B);">' + (d.message || 'Validation failed.') + '</div>'; }
+    else {
+      box.innerHTML = renderChecks(d.report) +
+        '<p style="font-size:12px;color:var(--lumi-muted);margin-top:var(--sp-3);">' + (d.deploy_note || '') + '</p>';
+    }
+  } catch (e) {
+    box.innerHTML = '<div style="font-size:13px;color:var(--lumi-danger,#C0392B);">Upload/validation request failed.</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Validate candidate';
+}
+
+async function refreshTrials() {
+  var btn = document.getElementById('refresh-trials-btn');
+  var box = document.getElementById('trials-result');
+  btn.disabled = true; btn.textContent = 'Refreshing…'; box.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/refresh-trials', {method: 'POST'});
+    var d = await r.json();
+    var rep = d.report || {subtypes: []};
+    var rows = rep.subtypes.map(function (s) {
+      var color = s.source === 'live' ? 'var(--lumi-success)' : 'var(--lumi-danger,#C0392B)';
+      var label = s.source === 'live' ? 'live' : 'fallback';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px solid rgba(196,110,156,0.08);">' +
+        '<span style="font-weight:600;color:var(--lumi-navy);">' + s.subtype + '</span>' +
+        '<span style="color:var(--lumi-muted);">' + s.count + ' trials · ' + s.attempts + ' attempt(s)</span>' +
+        '<span style="color:' + color + ';font-weight:600;">' + label + '</span></div>';
+    }).join('');
+    var banner = '<div style="padding:var(--sp-3) var(--sp-4);border-radius:var(--r-input);margin-bottom:var(--sp-3);font-weight:600;font-size:14px;background:rgba(44,156,132,0.12);color:var(--lumi-success);">' +
+      (d.message || 'Refreshed.') + '</div>';
+    box.innerHTML = banner + rows;
+    showToast('Clinical trials refreshed.', 'success');
+  } catch (e) {
+    box.innerHTML = '<div style="font-size:13px;color:var(--lumi-danger,#C0392B);">Refresh request failed.</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Refresh clinical trials';
 }
 
 async function changeRole(userId, newRole, selectEl) {

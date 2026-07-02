@@ -244,3 +244,64 @@ def get_trials(subtype, force_refresh=False):
 def clear_cache():
     """Clear the in-memory cache (useful for tests or an admin refresh)."""
     _CACHE.clear()
+
+
+MAX_ATTEMPTS = 3   # retry budget per subtype (mirrors the activity diagram)
+
+
+def refresh_all_trials():
+    """Admin 'Update Clinical Trials' action (honest subset of Fig 4.21).
+
+    Re-fetches every subtype from the live ClinicalTrials.gov API, retrying up
+    to MAX_ATTEMPTS times per subtype on failure, and returns a structured
+    update report. This does NOT diff/insert into a local trials table (the app
+    has no such table; trials are served live + cached), so the report reflects
+    what the live API actually returned, per subtype. No fabricated numbers.
+    """
+    report = {"subtypes": [], "total_live": 0, "total_fallback": 0,
+              "total_errors": 0, "fetched_at": time.time()}
+
+    for subtype in SUBTYPE_QUERY:
+        attempts = 0
+        last_error = None
+        trials = None
+        source = "error"
+        while attempts < MAX_ATTEMPTS:
+            attempts += 1
+            try:
+                fetched = _fetch_live(subtype)
+                if not fetched:
+                    raise ValueError("API reachable but returned no matching trials")
+                trials = fetched
+                source = "live"
+                break
+            except Exception as e:      # network/timeout/parse/empty
+                last_error = str(e)
+                time.sleep(0.4 * attempts)   # small backoff between attempts
+
+        if trials is None:
+            # All attempts failed: fall back to the curated list so the UI
+            # still has something, and record the error honestly.
+            trials = FALLBACK_TRIALS.get(subtype, [])
+            source = "fallback"
+
+        # Refresh the cache with whatever we got.
+        for t in trials:
+            t.setdefault("source", source)
+        _CACHE[subtype] = {"data": trials, "fetched_at": time.time()}
+
+        if source == "live":
+            report["total_live"] += 1
+        elif source == "fallback":
+            report["total_fallback"] += 1
+            report["total_errors"] += 1
+
+        report["subtypes"].append({
+            "subtype": subtype,
+            "source": source,
+            "count": len(trials),
+            "attempts": attempts,
+            "error": last_error if source != "live" else None,
+        })
+
+    return report

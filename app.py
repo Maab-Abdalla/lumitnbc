@@ -867,6 +867,29 @@ def _register_routes(app):
                       f"valid={report['valid']}", actor=current_user().email)
         return jsonify(report)
 
+    @app.route("/api/admin/model/validate-upload", methods=["POST"])
+    @role_required("admin")
+    def api_admin_model_validate_upload():
+        """Admin 'Update ML Model' (honest subset of Fig 4.22): upload a
+        candidate model file, validate it and run the reference test suite in
+        isolation. Does NOT deploy it, promotion requires a redeploy on this
+        single-instance setup, which the UI states plainly."""
+        import ml_pipeline
+        f = request.files.get("model")
+        if not f or not f.filename:
+            return jsonify({"success": False, "message": "No model file uploaded."}), 400
+        data = f.read()
+        report = ml_pipeline.validate_uploaded_model(data, f.filename)
+        _log_activity("admin_model_validate_upload",
+                      f"file={f.filename} valid={report['valid']}",
+                      actor=current_user().email)
+        return jsonify({"success": True, "report": report,
+                        "deploy_note": ("Validation only. To deploy a new model, "
+                                        "replace models/hybrid_model.joblib in the "
+                                        "deployment and redeploy, live hot-swap and "
+                                        "A/B traffic routing are not available on "
+                                        "this single-instance setup.")})
+
     # ── API: Auth ─────────────────────────────────────────────────────────────
 
     @app.route("/api/login", methods=["POST"])
@@ -1146,11 +1169,19 @@ def _register_routes(app):
     @app.route("/api/admin/refresh-trials", methods=["POST"])
     @role_required("admin")
     def api_refresh_trials():
-        """Clear the clinical-trials cache so the next lookup re-queries the
-        live ClinicalTrials.gov API. Supports the admin 'Update Clinical Trials
-        Database' use case."""
+        """Admin 'Update Clinical Trials' (honest subset of Fig 4.21).
+        Re-queries the live ClinicalTrials.gov API for every subtype with
+        retry, and returns a per-subtype update report. Trials are served live
+        (no local trials table to diff into), so the report reflects the live
+        fetch outcome rather than insert/update/skip counts."""
         clinical_trials.clear_cache()
-        return jsonify({"success": True, "message": "Clinical-trials cache cleared."})
+        report = clinical_trials.refresh_all_trials()
+        summary = (f"{report['total_live']}/4 subtypes refreshed live, "
+                   f"{report['total_errors']} fell back")
+        _log_activity("admin_refresh_trials", summary)
+        return jsonify({"success": True,
+                        "message": "Clinical trials refreshed. " + summary,
+                        "report": report})
 
     @app.route("/api/admin/clear-data", methods=["POST"])
     @role_required("admin")

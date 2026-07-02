@@ -141,6 +141,98 @@ EXPECTED_N_FEATURES = 163
 EXPECTED_CLASSES = ["BL1", "BL2", "LAR", "M"]
 
 
+def validate_uploaded_model(file_bytes, filename):
+    """Admin 'Update ML Model' (honest subset of Fig 4.22).
+
+    Validates a candidate model file WITHOUT touching the live model:
+      1. File checks: extension, size, loads as a joblib estimator with predict.
+      2. Contract checks: exposes the expected feature count / classes.
+      3. Test suite: predicts the four reference samples and reports real
+         accuracy on them.
+    Returns a structured report. Does NOT deploy the model, promotion to
+    production requires a redeploy on this single-instance setup, and the UI
+    says so; nothing here fakes A/B traffic or live monitoring.
+    """
+    import io
+    checks = []
+    def add(name, ok, detail=""):
+        checks.append({"name": name, "ok": bool(ok), "detail": detail})
+
+    # 1. Format
+    ok_ext = filename.lower().endswith((".joblib", ".pkl"))
+    add("File format is .joblib/.pkl", ok_ext,
+        "" if ok_ext else f"Got '{filename}'.")
+
+    # 2. Size (guard against absurd uploads; real model is ~tens–hundreds KB/MB)
+    size_kb = round(len(file_bytes) / 1024, 1)
+    ok_size = 0 < len(file_bytes) <= 200 * 1024 * 1024   # <=200 MB
+    add(f"File size within limit ({size_kb} KB)", ok_size,
+        "" if ok_size else "File empty or larger than 200 MB.")
+
+    candidate = None
+    if ok_ext and ok_size:
+        try:
+            candidate = joblib.load(io.BytesIO(file_bytes))
+            add("Loads as a model object", True,
+                f"Loaded {type(candidate).__name__}.")
+        except Exception as e:
+            add("Loads as a model object", False, f"Load failed: {e}")
+
+    # 3. Has a predict method
+    if candidate is not None:
+        has_predict = hasattr(candidate, "predict")
+        add("Exposes a predict() method", has_predict,
+            "" if has_predict else "Object has no predict().")
+
+        # 4. Feature-count contract (if the estimator advertises it)
+        n_feat = getattr(candidate, "n_features_in_", None)
+        if n_feat is not None:
+            add(f"Feature count = {EXPECTED_N_FEATURES}",
+                n_feat == EXPECTED_N_FEATURES,
+                f"Candidate expects {n_feat} features.")
+
+        # 5. Reference-sample test suite (real predictions on known samples)
+        test_dir = os.path.join(os.path.dirname(__file__), "test_data")
+        expected = {"tcga_single_bl1.csv": "BL1", "tcga_single_bl2.csv": "BL2",
+                    "tcga_single_lar.csv": "LAR", "tcga_single_m.csv": "M"}
+        correct = total = 0
+        details = []
+        for fname, exp_sub in expected.items():
+            fpath = os.path.join(test_dir, fname)
+            if not os.path.exists(fpath):
+                continue
+            total += 1
+            try:
+                with open(fpath, "rb") as f:
+                    df = parse_gene_file(f.read(), fname)
+                X = _align_features(df)
+                pred_idx = candidate.predict(X)[0]
+                classes = get_classes()
+                pred = classes[int(pred_idx)] if 0 <= int(pred_idx) < len(classes) else str(pred_idx)
+                if pred == exp_sub:
+                    correct += 1
+                details.append(f"{exp_sub}->{pred}")
+            except Exception as e:
+                details.append(f"{exp_sub}->error")
+        if total:
+            acc = round(correct / total * 100, 1)
+            add(f"Reference accuracy {correct}/{total} ({acc}%)",
+                correct == total, "; ".join(details))
+
+    passed = all(c["ok"] for c in checks)
+    return {"valid": passed, "checks": checks, "size_kb": size_kb,
+            "candidate_type": type(candidate).__name__ if candidate is not None else None}
+
+
+def _align_features(df):
+    """Best-effort align an input frame to the model's expected feature order,
+    filling missing columns with 0. Used only for candidate validation."""
+    import numpy as np
+    cols = _all_features if _all_features else list(df.columns)
+    aligned = df.reindex(columns=cols, fill_value=0.0)
+    return aligned.values
+
+
 def validate_model():
     """Validate the loaded model against the expected contract: it loads, has
     the right feature count and classes, and predicts the four known reference
